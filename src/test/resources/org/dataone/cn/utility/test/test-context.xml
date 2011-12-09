@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- 
+    This import overrides default postgres datasource for testing.
+    	 To test with postgres, comment out the following import 
+	-->
+	<import resource="classpath:hsql-datasource.xml" />
+	
+	<bean id="systemMetadataResource" class="org.springframework.core.io.ClassPathResource" >
+        <constructor-arg type="java.lang.String" value="org/dataone/cn/utility/test/resources/samples/v1/systemMetadataSample.xml"/>
+    </bean>
+
+	<bean id="systemMetadataResource1" class="org.springframework.core.io.ClassPathResource" >
+        <constructor-arg type="java.lang.String" 
+        value="org/dataone/cn/utility/test/resources/d1_testdocs/eml210/SystemMetadata/peggym.127.1"/>
+    </bean>
+	<bean id="systemMetadataResource2" class="org.springframework.core.io.ClassPathResource" >
+        <constructor-arg type="java.lang.String" 
+        value="org/dataone/cn/utility/test/resources/d1_testdocs/eml210/SystemMetadata/peggym.128.1"/>
+    </bean>
+	<bean id="systemMetadataResource3" class="org.springframework.core.io.ClassPathResource" >
+        <constructor-arg type="java.lang.String" 
+        value="org/dataone/cn/utility/test/resources/d1_testdocs/eml210/SystemMetadata/peggym.129.1"/>
+    </bean>
+	<bean id="systemMetadataResource4" class="org.springframework.core.io.ClassPathResource" >
+        <constructor-arg type="java.lang.String" 
+        value="org/dataone/cn/utility/test/resources/d1_testdocs/eml210/SystemMetadata/peggym.130.4"/>
+    </bean>
+	<bean id="systemMetadataResource5" class="org.springframework.core.io.ClassPathResource" >
+        <constructor-arg type="java.lang.String" 
+        value="org/dataone/cn/utility/test/resources/d1_testdocs/eml210/SystemMetadata/peggym.resourcemap"/>
+    </bean>
+    
+</beans>

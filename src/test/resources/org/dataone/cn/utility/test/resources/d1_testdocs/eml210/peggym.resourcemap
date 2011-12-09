@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+   xmlns:cito="http://purl.org/spar/cito/"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:dcterms="http://purl.org/dc/terms/"
+   xmlns:foaf="http://xmlns.com/foaf/0.1/"
+   xmlns:ore="http://www.openarchives.org/ore/terms/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:rdfs1="http://www.w3.org/2001/01/rdf-schema#"
+>
+  <rdf:Description rdf:about="https://cn.dataone.org/object/peggym.130.4">
+    <cito:documents rdf:resource="https://cn.dataone.org/object/peggym.127.1"/>
+    <cito:documents rdf:resource="https://cn.dataone.org/object/peggym.128.1"/>
+    <cito:documents rdf:resource="https://cn.dataone.org/object/peggym.129.1"/>
+    <dcterms:identifier>peggym.130.4</dcterms:identifier>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://cn.dataone.org/object/peggym.128.1">
+    <dcterms:identifier>peggym.128.1</dcterms:identifier>
+    <cito:isDocumentedBy rdf:resource="https://cn.dataone.org/object/peggym.130.4"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.openarchives.org/ore/terms/ResourceMap">
+    <rdfs1:isDefinedBy rdf:resource="http://www.openarchives.org/ore/terms/"/>
+    <rdfs1:label>ResourceMap</rdfs1:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="aggregation_id">
+    <ore:aggregates rdf:resource="https://cn.dataone.org/object/peggym.127.1"/>
+    <ore:aggregates rdf:resource="https://cn.dataone.org/object/peggym.130.4"/>
+    <ore:aggregates rdf:resource="https://cn.dataone.org/object/peggym.128.1"/>
+    <ore:aggregates rdf:resource="https://cn.dataone.org/object/peggym.129.1"/>
+    <rdf:type rdf:resource="http://www.openarchives.org/ore/terms/Aggregation"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://foresite-toolkit.googlecode.com/#pythonAgent">
+    <foaf:name>Foresite Toolkit (Python)</foaf:name>
+    <foaf:mbox>foresite@googlegroups.com</foaf:mbox>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://cn.dataone.org/object/peggym.129.1">
+    <dcterms:identifier>peggym.129.1</dcterms:identifier>
+    <cito:isDocumentedBy rdf:resource="https://cn.dataone.org/object/peggym.130.4"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://cn.dataone.org/object/peggym.127.1">
+    <dcterms:identifier>peggym.127.1</dcterms:identifier>
+    <cito:isDocumentedBy rdf:resource="https://cn.dataone.org/object/peggym.130.4"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://cn.dataone.org/object/peggym.resourcemap">
+    <rdf:type rdf:resource="http://www.openarchives.org/ore/terms/ResourceMap"/>
+    <ore:describes rdf:resource="aggregation_id"/>
+    <dc:format>application/rdf+xml</dc:format>
+    <dcterms:identifier>peggym.resourcemap</dcterms:identifier>
+    <dcterms:created>2011-08-19T11:51:46Z</dcterms:created>
+    <dcterms:creator rdf:resource="http://foresite-toolkit.googlecode.com/#pythonAgent"/>
+    <dcterms:modified>2011-08-19T11:51:46Z</dcterms:modified>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.openarchives.org/ore/terms/Aggregation">
+    <rdfs1:isDefinedBy rdf:resource="http://www.openarchives.org/ore/terms/"/>
+    <rdfs1:label>Aggregation</rdfs1:label>
+  </rdf:Description>
+</rdf:RDF>
+

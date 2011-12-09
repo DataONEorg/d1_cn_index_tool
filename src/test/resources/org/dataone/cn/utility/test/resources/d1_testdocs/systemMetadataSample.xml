@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d1:systemMetadata xmlns:d1="http://ns.dataone.org/service/types/v1"
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <serialVersion>1</serialVersion>
+    <identifier>42</identifier>
+    <formatId>eml://ecoinformatics.org/eml-2.0.1</formatId>
+
+    <size>1000</size>
+    <checksum algorithm="SHA-1">2e01e17467891f7c933dbaa00e1459d23db3fe4f</checksum>
+    <submitter>uid=jones,o=NCEAS,dc=ecoinformatics,dc=org</submitter>
+    <rightsHolder>uid=jones,o=NCEAS,dc=ecoinformatics,dc=org</rightsHolder>
+    <accessPolicy>
+        <allow>
+            <subject>public</subject>
+            <permission>read</permission>
+        </allow>
+        <allow>
+            <subject>uid=jones,o=NCEAS,dc=ecoinformatics,dc=org</subject>
+            <permission>write</permission>
+        </allow>
+    </accessPolicy>
+    <replicationPolicy replicationAllowed="true" numberReplicas="3">
+        <preferredMemberNode>sqR1</preferredMemberNode>
+        <preferredMemberNode>sq4k</preferredMemberNode>
+        <preferredMemberNode>sqrm</preferredMemberNode>
+<!--        <blockedMemberNode></blockedMemberNode> -->
+    </replicationPolicy>
+    <dateUploaded>2011-05-04T18:13:51.000-00:00</dateUploaded>
+    <dateSysMetadataModified>2011-05-04T18:13:51.000-00:00</dateSysMetadataModified>
+    <originMemberNode>sq1d</originMemberNode>
+    <authoritativeMemberNode>sq1d</authoritativeMemberNode>
+    <replica>
+        <replicaMemberNode>sq1d</replicaMemberNode>
+        <replicationStatus>completed</replicationStatus>
+        <replicaVerified>2011-05-04T18:13:51.000-00:00</replicaVerified>
+    </replica>
+</d1:systemMetadata>
