@@ -40,4 +40,53 @@
 			<version>${index_processor_version}</version>
 		</dependency>
   </dependencies>
+  
+	<build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <doCheck>false</doCheck>
+                    <doUpdate>false</doUpdate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <D1-version>${project.version}</D1-version>
+                            <D1-SCM-Revision>${buildNumber}</D1-SCM-Revision>
+                            <D1-SCM-Branch>${scmBranch}</D1-SCM-Branch>
+                            <D1-Build-TimeStamp>${timestamp}</D1-Build-TimeStamp>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+		</plugins>
+	</build>
+    <scm>
+	    <url>https://repository.dataone.org/software/cicore</url>
+	    <connection>scm:svn:https://repository.dataone.org/software/cicore</connection>
+	    <developerConnection>scm:svn:https://repository.dataone.org/software/cicore</developerConnection>
+	    <tag>HEAD</tag>
+    </scm>  
 </project>
