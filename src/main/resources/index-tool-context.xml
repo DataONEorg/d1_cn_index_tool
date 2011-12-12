@@ -6,7 +6,7 @@
     	http://www.springframework.org/schema/context  
     	http://www.springframework.org/schema/context/spring-context-3.0.xsd">
  		
- 	<context:property-placeholder location="classpath:jdbc.properties, classpath:org/dataone/configuration/solr.properties"/>
+ 	<context:property-placeholder location="file:/etc/dataone/indexing/jdbc.properties, file:/etc/dataone/indexing/solr.properties"/>
  		
 	<import resource="classpath:generator-context.xml"/>
  	<import resource="classpath:application-context.xml"/>
