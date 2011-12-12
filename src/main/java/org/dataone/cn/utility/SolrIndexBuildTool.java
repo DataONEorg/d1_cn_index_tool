@@ -55,8 +55,8 @@ public class SolrIndexBuildTool {
     }
 
     private static void refreshSolrIndex(SolrIndexBuildTool indexTool) {
-        indexTool.configureHazelcast();
         indexTool.configureContext();
+        indexTool.configureHazelcast();
         indexTool.generateIndexTasksAndProcess();
         // call processor a final time to process resource maps that could not
         // process on first pass (references not indexed delays resource map

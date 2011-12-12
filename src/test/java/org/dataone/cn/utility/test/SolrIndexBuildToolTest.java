@@ -70,7 +70,8 @@ public class SolrIndexBuildToolTest {
         try {
             SolrIndexBuildTool.main(null);
         } catch (Exception e) {
-
+            e.printStackTrace();
+            Assert.assertFalse(true);
         }
         Assert.assertTrue(true);
     }
