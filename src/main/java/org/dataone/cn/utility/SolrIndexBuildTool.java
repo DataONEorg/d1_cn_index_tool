@@ -13,13 +13,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.IMap;
 
-/**
- * This test currently relies upon: a postgres install and config see:
- * cn_index_common, and a solr server to connect to, see: solr.properties.
- * 
- * @author sroseboo
- * 
- */
 public class SolrIndexBuildTool {
     private static Logger logger = Logger.getLogger(SolrIndexBuildTool.class.getName());
 
@@ -76,7 +69,7 @@ public class SolrIndexBuildTool {
             }
         }
         // call processor:
-        // it won't be called on last iteration of for loop if count < 1000
+        // it won't be called on last iteration of the for loop if count < 1000
         processIndexTasks();
     }
 
