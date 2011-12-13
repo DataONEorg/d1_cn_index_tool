@@ -28,6 +28,14 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 
+/**
+ * This test currently relies upon: a postgres install and config see:
+ * cn_index_common, and a solr server to connect to, see: solr.properties.
+ * 
+ * @author sroseboo
+ * 
+ */
+
 @RunWith(SpringJUnit4ClassRunner.class)
 // context files are located from the root of the test's classpath
 // for example org/dataone/cn/index/test/
@@ -55,7 +63,7 @@ public class SolrIndexBuildToolTest {
     @Autowired
     private Resource systemMetadataResource4;
     @Autowired
-    private Resource systemMetadataResource5;
+    private Resource systemMetadataResource5; // resource map for 1-4
 
     @Test
     public void testSolrIndexRefreshTool() {
