@@ -3,11 +3,11 @@
    	xmlns:context="http://www.springframework.org/schema/context"
   	xsi:schemaLocation="http://www.springframework.org/schema/beans 
   		http://www.springframework.org/schema/beans/spring-beans.xsd
-    	http://www.springframework.org/schema/context  
+    	http://www.springframework.org/schema/context
     	http://www.springframework.org/schema/context/spring-context-3.0.xsd">
- 		
- 	<context:property-placeholder location="file:/etc/dataone/indexing/jdbc.properties, file:/etc/dataone/indexing/solr.properties"/>
+    	
+ 	<context:property-placeholder location="file:/etc/dataone/index/jdbc.properties, file:/etc/dataone/index/solr.properties"/>
  		
 	<import resource="classpath:generator-context.xml"/>
- 	<import resource="classpath:application-context.xml"/>
+ 	<import resource="classpath:index-processor-context.xml"/>
 </beans>

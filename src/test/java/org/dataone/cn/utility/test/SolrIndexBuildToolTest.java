@@ -76,7 +76,7 @@ public class SolrIndexBuildToolTest {
         addSystemMetadata(systemMetadataResource5);
 
         try {
-            SolrIndexBuildTool.main(null);
+            SolrIndexBuildTool.main(new String[] { "-a" });
         } catch (Exception e) {
             e.printStackTrace();
             Assert.assertFalse(true);
