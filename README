@@ -1,0 +1,17 @@
+DataONE CN Index Build Tool
+------------------------
+
+This tool runs from the command line and provideds a solr build/re-build utility.
+
+This tool will generate index tasks for each object in the CN node's system metadata map.
+
+This tool makes use of the cn_index_generator and cn_index_processor components to create index tasks
+and process them as updates to a solr server's index.  To achieve this integration the
+index-tool-context.xml imports the generator and processor's spring context file to provide access
+to the generator and processor objects.  Production configuration for solr and jdbc is configured 
+within the tools spring context configuration.
+
+See the test classes under src/test for example usage and test-context.xml for test runtime configuration.
+SolrIndexBuildToolTest is an integration test that relies on a test solr, hazelcast, and jdbc environemnt.
+
+See LICENSE.txt for the details of distributing this software.
