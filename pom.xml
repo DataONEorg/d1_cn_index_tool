@@ -7,10 +7,13 @@
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   		<d1_common_version>1.0.1-SNAPSHOT</d1_common_version>
+  		<d1_libclient_version>1.0.1-SNAPSHOT</d1_libclient_version>
   		<d1_cn_common_version>1.0.0-SNAPSHOT</d1_cn_common_version>
   		<index_common_version>0.0.1-SNAPSHOT</index_common_version>
   		<index_generator_version>0.0.1-SNAPSHOT</index_generator_version>
   		<index_processor_version>0.6.4-SNAPSHOT</index_processor_version>
+  		<spring.version>3.0.6.RELEASE</spring.version>
+  		<hazelcast.version>1.9.4.4</hazelcast.version>
 	</properties>
   
   <dependencies>
@@ -19,6 +22,11 @@
 			<artifactId>d1_common_java</artifactId>
 			<version>${d1_common_version}</version>
 		</dependency>
+        <dependency>
+        	<groupId>org.dataone</groupId>
+        	<artifactId>d1_libclient_java</artifactId>
+        	<version>${d1_libclient_version}</version>
+        </dependency>
 		<dependency>
 			<groupId>org.dataone</groupId>
 			<artifactId>d1_cn_common</artifactId>
@@ -39,6 +47,131 @@
 			<artifactId>d1_cn_index_processor</artifactId>
 			<version>${index_processor_version}</version>
 		</dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${hazelcast.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-spring</artifactId>
+            <version>${hazelcast.version}</version>
+            <scope>compile</scope>
+        </dependency>
+		
+        <dependency>
+            <groupId>org.jibx</groupId>
+            <artifactId>jibx-run</artifactId>
+            <version>1.2.3</version>
+            <optional>false</optional>
+            <scope>compile</scope>
+        </dependency>
+		
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-beans</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-context</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-aop</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-context-support</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-tx</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-orm</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-jdbc</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		<dependency>
+		    <groupId>org.springframework.data</groupId>
+		    <artifactId>spring-data-jpa</artifactId>
+		    <version>1.0.1.RELEASE</version>
+		</dependency>
+		 <dependency>
+		   <groupId>org.springframework</groupId>
+		   <artifactId>spring-test</artifactId>
+		   <version>${spring.version}</version>
+		 </dependency>
+		<dependency>
+		    <groupId>cglib</groupId>
+		    <artifactId>cglib</artifactId>
+		    <version>2.2.2</version>
+		</dependency>
+		
+		<dependency>
+    		<groupId>org.hibernate</groupId>
+    		<artifactId>hibernate-core</artifactId>
+    		<version>4.0.0.CR6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-entitymanager</artifactId>
+			<version>4.0.0.CR6</version>
+		</dependency>	
+		<dependency>
+		    <groupId>commons-dbcp</groupId>
+		    <artifactId>commons-dbcp</artifactId>
+		    <version>20030825.184428</version>
+		</dependency>
+		<dependency>
+		    <groupId>commons-pool</groupId>
+		    <artifactId>commons-pool</artifactId>
+		    <version>20030825.183949</version>
+		</dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.5</version>
+        </dependency>
+		<dependency>
+			<groupId>postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>8.4-702.jdbc4</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.hsqldb</groupId>
+		    <artifactId>hsqldb</artifactId>
+		    <version>2.2.6</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-log4j12</artifactId>
+		    <version>1.6.4</version>
+		</dependency>
+
 		<dependency>
 		    <groupId>junit</groupId>
 		    <artifactId>junit</artifactId>
