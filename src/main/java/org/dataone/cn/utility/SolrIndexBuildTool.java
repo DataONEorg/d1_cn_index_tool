@@ -70,7 +70,7 @@ public class SolrIndexBuildTool {
             fullRefresh = false;
         }
         if (fullRefresh) {
-            System.out.println("Performing full (re)build of solr index.");
+            System.out.println("Performing full build/refresh of solr index.");
         } else if (dateParameter != null) {
             System.out.println("Performing (re)build from date: "
                     + dateFormat.format(dateParameter) + ".");
@@ -98,6 +98,7 @@ public class SolrIndexBuildTool {
 
     // if dateParameter is null -- full refresh
     private void generateIndexTasksAndProcess(Date dateParameter) {
+        System.out.print("Generating index updates: ");
         int count = 0;
         for (SystemMetadata smd : systemMetadata.values()) {
             if (dateParameter == null
@@ -109,14 +110,20 @@ public class SolrIndexBuildTool {
                     processIndexTasks();
                     count = 0;
                 }
+                if (count % 10 == 0) {
+                    System.out.print(".");
+                }
             }
         }
+        System.out.println("Finished generating index update.");
+        System.out.println("Processing index task requests.");
         // call processor:
         // it won't be called on last iteration of the for loop if count < 1000
         processIndexTasks();
         // call processor a final time to process resource maps that could not
         // process on first pass
         processIndexTasks();
+        System.out.println("Finished processing index task requests.");
     }
 
     private void processIndexTasks() {
@@ -144,6 +151,14 @@ public class SolrIndexBuildTool {
 
     private static void showHelp() {
         System.out.println("DataONE solr index build tool help:");
+        System.out.println(" ");
+        System.out.println("This tool indexes objects the CN's system metadata map.");
+        System.out.println("   Nothing is removed from the solr index, just added/updated.");
+        System.out.println(" ");
+        System.out.println("Please stop the d1-cn-index-processor while this tool runs: ");
+        System.out.println("       /etc/init.d/d1-cn-index-processor stop");
+        System.out.println("And restart whent the tool finishes:");
+        System.out.println("       /etc/init.d/d1-cn-index-processor start");
         System.out.println(" ");
         System.out.println("-d     System data modified date to begin index build/refresh from.");
         System.out.println("       Data objects modified/added after this date will be indexed.");
