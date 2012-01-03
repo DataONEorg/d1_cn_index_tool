@@ -13,6 +13,7 @@
   		<index_generator_version>0.0.1-SNAPSHOT</index_generator_version>
   		<index_processor_version>0.6.4-SNAPSHOT</index_processor_version>
   		<d1_indexer_api_version>1.0-SNAPSHOT</d1_indexer_api_version>
+  		<d1_cn_noderegistry_version>1.0.0-SNAPSHOT</d1_cn_noderegistry_version>
   		<spring.version>3.0.6.RELEASE</spring.version>
   		<hazelcast.version>1.9.4.5</hazelcast.version>
 	</properties>
@@ -52,6 +53,11 @@
 		   <groupId>org.dataone.cn.indexer</groupId>
 		   <artifactId>indexerapi</artifactId>
 		   <version>${d1_indexer_api_version}</version>
+		</dependency>
+ 		<dependency>
+			<groupId>org.dataone</groupId>
+		    <artifactId>d1_cn_noderegistry</artifactId>
+			<version>${d1_cn_noderegistry_version}</version>
 		</dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
