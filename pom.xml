@@ -269,4 +269,17 @@
 	    <developerConnection>scm:svn:https://repository.dataone.org/software/cicore</developerConnection>
 	    <tag>HEAD</tag>
     </scm>  
+    
+    <repositories>
+        <repository>
+            <id>sonatype.org</id>
+            <url>https://repository.sonatype.org/content/shadows/centralm1</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+	</repositories>
 </project>
