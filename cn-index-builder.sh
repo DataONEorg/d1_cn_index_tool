@@ -4,7 +4,9 @@
 # Handles building a project and projects its dependant on, for a 
 # clean build-out.
 #
-# mvn clean, install is called in each project in PROJECTS array
+# mvn clean, install is called in each project in PROJECTS array.
+# Projects cleaned,installed in order of array, so order by dependency.
+#
 # jars in BUILDOUT_JARS are then copied to the BUILDOUT_DIR.
 #
 # Assumes buildout directory is rooted inside workspace directory.
@@ -12,7 +14,7 @@
 # rooted from a common directory inside the workspace dir.
 #
 #  workspace_dir
-#   -> project_dir
+#   -> project_dir (indexer)
 #      -> project1,2,3,etc (java_common, libclient, etc.)
 #   -> buildout_dir (root directory of the buildout project)
 #
