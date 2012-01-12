@@ -4,6 +4,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -28,9 +29,13 @@ public class SolrIndexBuildTool {
     private static final String HZ_OBJECT_PATH = Settings.getConfiguration().getString(
             "dataone.hazelcast.objectPath");
 
+    private static final String HZ_IDENTIFIERS = Settings.getConfiguration().getString(
+            "dataone.hazelcast.identifiers");
+
     private HazelcastClient hzClient;
     private IMap<Identifier, SystemMetadata> systemMetadata;
     private IMap<Identifier, String> objectPaths;
+    private Set<Identifier> pids;
     private ApplicationContext context;
 
     private IndexTaskGenerator generator;
@@ -100,7 +105,8 @@ public class SolrIndexBuildTool {
     private void generateIndexTasksAndProcess(Date dateParameter) {
         System.out.print("Generating index updates: ");
         int count = 0;
-        for (SystemMetadata smd : systemMetadata.values()) {
+        for (Identifier smdId : pids) {
+            SystemMetadata smd = systemMetadata.get(smdId);
             if (dateParameter == null
                     || dateParameter.compareTo(smd.getDateSysMetadataModified()) <= 0) {
                 String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
@@ -121,7 +127,7 @@ public class SolrIndexBuildTool {
         // it won't be called on last iteration of the for loop if count < 1000
         processIndexTasks();
         // call processor a final time to process resource maps that could not
-        // process on first pass
+        // process on first pass - necessary?
         processIndexTasks();
         System.out.println("Finished processing index task requests.");
     }
@@ -141,6 +147,7 @@ public class SolrIndexBuildTool {
         hzClient = HazelcastClientInstance.getHazelcastClient();
         systemMetadata = hzClient.getMap(HZ_SYSTEM_METADATA);
         objectPaths = hzClient.getMap(HZ_OBJECT_PATH);
+        pids = hzClient.getSet(HZ_IDENTIFIERS);
     }
 
     private void configureContext() {
