@@ -6,8 +6,8 @@
   
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  		<d1_common_version>1.0.1-SNAPSHOT</d1_common_version>
-  		<d1_libclient_version>1.0.1-SNAPSHOT</d1_libclient_version>
+  		<d1_common_version>1.0.1-RC1</d1_common_version>
+  		<d1_libclient_version>1.0.1-RC1</d1_libclient_version>
   		<d1_cn_common_version>1.0.0-SNAPSHOT</d1_cn_common_version>
   		<index_common_version>0.0.1-SNAPSHOT</index_common_version>
   		<index_generator_version>0.0.1-SNAPSHOT</index_generator_version>
@@ -250,12 +250,31 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/spring.schemas</resource>
                                 </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>buildInfo/buildInfo.properties</resource>
+                                </transformer>
                             </transformers>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 		</plugins>
+		<resources>
+	      <resource>
+	        <directory>src/main/resources</directory>
+	        <filtering>true</filtering>
+	        <includes>
+	          <include>buildInfo/buildInfo.properties</include>
+	        </includes>
+	      </resource>
+	      <resource>
+	        <directory>src/main/resources</directory>
+	        <filtering>false</filtering>
+	        <includes>
+	          <include>**/*.*</include>
+	        </includes>
+	      </resource>
+		</resources>
 	</build>
 	<licenses>
 		<license>
@@ -281,5 +300,15 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+		<repository>
+			<id>dataone.org</id>
+			<url>http://dev-testing.dataone.org/maven</url>
+			<releases>
+			    <enabled>true</enabled>
+			</releases>
+			<snapshots>
+			    <enabled>true</enabled>
+			</snapshots>
+		</repository>
 	</repositories>
 </project>
