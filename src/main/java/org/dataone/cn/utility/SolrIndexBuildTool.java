@@ -99,6 +99,7 @@ public class SolrIndexBuildTool {
         indexTool.configureContext();
         indexTool.configureHazelcast();
         indexTool.generateIndexTasksAndProcess(dateParameter);
+        indexTool.shutdown();
     }
 
     // if dateParameter is null -- full refresh
@@ -128,7 +129,7 @@ public class SolrIndexBuildTool {
         processIndexTasks();
         // call processor a final time to process resource maps that could not
         // process on first pass - necessary?
-        processIndexTasks();
+        // processIndexTasks();
         System.out.println("Finished processing index task requests.");
     }
 
@@ -140,6 +141,16 @@ public class SolrIndexBuildTool {
         Identifier PID = new Identifier();
         PID.setValue(pid);
         return objectPaths.get(PID);
+    }
+
+    private void evict(Identifier smdId) {
+        systemMetadata.evict(smdId);
+        System.out.println("evicted: " + smdId.getValue());
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void configureHazelcast() {
@@ -154,6 +165,10 @@ public class SolrIndexBuildTool {
         context = new ClassPathXmlApplicationContext("index-tool-context.xml");
         generator = (IndexTaskGenerator) context.getBean("indexTaskGenerator");
         processor = (IndexTaskProcessor) context.getBean("indexTaskProcessor");
+    }
+
+    private void shutdown() {
+        hzClient.shutdown();
     }
 
     private static void showHelp() {
