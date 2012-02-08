@@ -127,9 +127,6 @@ public class SolrIndexBuildTool {
         // call processor:
         // it won't be called on last iteration of the for loop if count < 1000
         processIndexTasks();
-        // call processor a final time to process resource maps that could not
-        // process on first pass - necessary?
-        // processIndexTasks();
         System.out.println("Finished processing index task requests.");
     }
 
@@ -141,16 +138,6 @@ public class SolrIndexBuildTool {
         Identifier PID = new Identifier();
         PID.setValue(pid);
         return objectPaths.get(PID);
-    }
-
-    private void evict(Identifier smdId) {
-        systemMetadata.evict(smdId);
-        System.out.println("evicted: " + smdId.getValue());
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     private void configureHazelcast() {
