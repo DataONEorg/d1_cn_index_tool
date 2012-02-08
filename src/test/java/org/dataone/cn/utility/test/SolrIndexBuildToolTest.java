@@ -3,6 +3,7 @@ package org.dataone.cn.utility.test;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Set;
 
 import junit.framework.Assert;
 
@@ -44,15 +45,17 @@ public class SolrIndexBuildToolTest {
 
     private static Logger logger = Logger.getLogger(SolrIndexBuildToolTest.class.getName());
 
+    private static final String systemMetadataMapName = Settings.getConfiguration().getString(
+            "dataone.hazelcast.systemMetadata");
+    private static final String objectPathName = Settings.getConfiguration().getString(
+            "dataone.hazelcast.objectPath");
+    private static final String HZ_IDENTIFIERS = Settings.getConfiguration().getString(
+            "dataone.hazelcast.identifiers");
+
     private HazelcastInstance hzMember;
     private IMap<Identifier, SystemMetadata> sysMetaMap;
     private IMap<Identifier, String> objectPaths;
-
-    private static final String systemMetadataMapName = Settings.getConfiguration().getString(
-            "dataone.hazelcast.systemMetadata");
-
-    private static final String objectPathName = Settings.getConfiguration().getString(
-            "dataone.hazelcast.objectPath");
+    private Set<Identifier> pids;
 
     @Autowired
     private Resource systemMetadataResource1;
@@ -100,6 +103,7 @@ public class SolrIndexBuildToolTest {
 
         sysMetaMap = hzMember.getMap(systemMetadataMapName);
         objectPaths = hzMember.getMap(objectPathName);
+        pids = hzMember.getSet(HZ_IDENTIFIERS);
     }
 
     @After
@@ -125,6 +129,7 @@ public class SolrIndexBuildToolTest {
         }
         sysMetaMap.putAsync(sysmeta.getIdentifier(), sysmeta);
         objectPaths.putAsync(sysmeta.getIdentifier(), path);
+        pids.add(sysmeta.getIdentifier());
     }
 
 }

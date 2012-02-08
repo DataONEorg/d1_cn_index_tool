@@ -60,6 +60,8 @@
     <keep-alive-seconds>60</keep-alive-seconds>
   </executor-service>
 
+  <set name="hzIdentifiers" />
+
   <map name="hzSystemMetadata">
     <!--
       Number of backups. If 1 is set as the backup-count for example,
