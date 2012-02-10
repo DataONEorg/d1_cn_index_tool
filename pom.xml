@@ -2,18 +2,16 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dataone</groupId>
   <artifactId>d1_cn_index_tool</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  
+  <version>1.0.0-RC1</version>
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  		<d1_common_version>1.0.1-RC1</d1_common_version>
-  		<d1_libclient_version>1.0.1-RC1</d1_libclient_version>
-  		<d1_cn_common_version>1.0.0-SNAPSHOT</d1_cn_common_version>
-  		<index_common_version>0.0.1-SNAPSHOT</index_common_version>
-  		<index_generator_version>0.0.1-SNAPSHOT</index_generator_version>
-  		<index_processor_version>0.6.4-SNAPSHOT</index_processor_version>
-  		<d1_indexer_api_version>1.0-SNAPSHOT</d1_indexer_api_version>
-  		<d1_cn_noderegistry_version>1.0.0-SNAPSHOT</d1_cn_noderegistry_version>
+  		<d1_common_version>1.0.1-RC2</d1_common_version>
+  		<d1_libclient_version>1.0.1-RC2</d1_libclient_version>
+  		<d1_cn_common_version>1.0.0-RC1</d1_cn_common_version>
+  		<index_common_version>1.0.0-RC1</index_common_version>
+  		<index_generator_version>1.0.0-RC1</index_generator_version>
+  		<index_processor_version>1.0.0-RC1</index_processor_version>
+  		<d1_cn_noderegistry_version>1.0.0-RC1</d1_cn_noderegistry_version>
   		<spring.version>3.1.0.RELEASE</spring.version>
   		<hazelcast.version>1.9.4.6</hazelcast.version>
 	</properties>
@@ -48,11 +46,6 @@
 			<groupId>org.dataone</groupId>
 			<artifactId>d1_cn_index_processor</artifactId>
 			<version>${index_processor_version}</version>
-		</dependency>
-		<dependency>
-		   <groupId>org.dataone.cn.indexer</groupId>
-		   <artifactId>indexerapi</artifactId>
-		   <version>${d1_indexer_api_version}</version>
 		</dependency>
  		<dependency>
 			<groupId>org.dataone</groupId>
