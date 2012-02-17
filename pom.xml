@@ -13,7 +13,7 @@
   		<index_generator_version>1.0.0-RC2-SNAPSHOT</index_generator_version>
   		<index_processor_version>1.0.0-RC2-SNAPSHOT</index_processor_version>
   		<d1_cn_noderegistry_version>1.0.0-RC2-SNAPSHOT</d1_cn_noderegistry_version>
-  		<spring.version>3.1.0.RELEASE</spring.version>
+  		<spring.version>3.1.1.RELEASE</spring.version>
   		<hazelcast.version>1.9.4.6</hazelcast.version>
 	</properties>
   
