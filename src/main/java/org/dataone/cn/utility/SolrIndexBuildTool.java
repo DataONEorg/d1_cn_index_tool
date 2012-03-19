@@ -110,15 +110,21 @@ public class SolrIndexBuildTool {
             SystemMetadata smd = systemMetadata.get(smdId);
             if (dateParameter == null
                     || dateParameter.compareTo(smd.getDateSysMetadataModified()) <= 0) {
-                String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-                generator.processSystemMetaDataUpdate(smd, objectPath);
-                count++;
-                if (count > 1000) {
-                    processIndexTasks();
-                    count = 0;
-                }
-                if (count % 10 == 0) {
-                    System.out.print(".");
+
+                if (smd == null || smd.getIdentifier() == null) {
+                    System.out.println("PID: " + smdId.getValue()
+                            + " exists in pids set but cannot be found in system metadata map.");
+                } else {
+                    String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+                    generator.processSystemMetaDataUpdate(smd, objectPath);
+                    count++;
+                    if (count > 1000) {
+                        processIndexTasks();
+                        count = 0;
+                    }
+                    if (count % 10 == 0) {
+                        System.out.print(".");
+                    }
                 }
             }
         }
