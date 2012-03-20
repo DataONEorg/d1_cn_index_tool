@@ -3,16 +3,16 @@
   <groupId>org.dataone</groupId>
   <artifactId>d1_cn_index_tool</artifactId>
   <name>d1_cn_index_tool</name>
-  <version>1.0.0-RC4-SNAPSHOT</version>
+  <version>1.0.0-RC5-SNAPSHOT</version>
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  		<d1_common_version>1.0.1-RC5-SNAPSHOT</d1_common_version>
-  		<d1_libclient_version>1.0.1-RC5-SNAPSHOT</d1_libclient_version>
-  		<d1_cn_common_version>1.0.0-RC4-SNAPSHOT</d1_cn_common_version>
-  		<index_common_version>1.0.0-RC4-SNAPSHOT</index_common_version>
-  		<index_generator_version>1.0.0-RC4-SNAPSHOT</index_generator_version>
-  		<index_processor_version>1.0.0-RC4-SNAPSHOT</index_processor_version>
-  		<d1_cn_noderegistry_version>1.0.0-RC4-SNAPSHOT</d1_cn_noderegistry_version>
+  		<d1_common_version>1.0.1-RC6-SNAPSHOT</d1_common_version>
+  		<d1_libclient_version>1.0.1-RC6-SNAPSHOT</d1_libclient_version>
+  		<d1_cn_common_version>1.0.0-RC5-SNAPSHOT</d1_cn_common_version>
+  		<index_common_version>1.0.0-RC5-SNAPSHOT</index_common_version>
+  		<index_generator_version>1.0.0-RC5-SNAPSHOT</index_generator_version>
+  		<index_processor_version>1.0.0-RC5-SNAPSHOT</index_processor_version>
+  		<d1_cn_noderegistry_version>1.0.0-RC5-SNAPSHOT</d1_cn_noderegistry_version>
   		<spring.version>3.1.1.RELEASE</spring.version>
   		<hazelcast.version>1.9.4.6</hazelcast.version>
 	</properties>
