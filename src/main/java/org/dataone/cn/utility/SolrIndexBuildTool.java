@@ -106,6 +106,8 @@ public class SolrIndexBuildTool {
     private void generateIndexTasksAndProcess(Date dateParameter) {
         System.out.print("Generating index updates: ");
         int count = 0;
+        System.out.println("System Identifiers HzCast structure contains: " + pids.size()
+                + " identifiers.");
         for (Identifier smdId : pids) {
             SystemMetadata smd = systemMetadata.get(smdId);
             if (dateParameter == null
