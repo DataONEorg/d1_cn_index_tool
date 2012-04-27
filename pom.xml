@@ -12,7 +12,6 @@
   		<index_common_version>1.0.0-RC6-SNAPSHOT</index_common_version>
   		<index_generator_version>1.0.0-RC6-SNAPSHOT</index_generator_version>
   		<index_processor_version>1.0.0-RC6-SNAPSHOT</index_processor_version>
-  		<d1_cn_noderegistry_version>1.0.0-RC6-SNAPSHOT</d1_cn_noderegistry_version>
   		<spring.version>3.1.1.RELEASE</spring.version>
   		<hazelcast.version>1.9.4.6</hazelcast.version>
 	</properties>
@@ -47,11 +46,6 @@
 			<groupId>org.dataone</groupId>
 			<artifactId>d1_cn_index_processor</artifactId>
 			<version>${index_processor_version}</version>
-		</dependency>
- 		<dependency>
-			<groupId>org.dataone</groupId>
-		    <artifactId>d1_cn_noderegistry</artifactId>
-			<version>${d1_cn_noderegistry_version}</version>
 		</dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
