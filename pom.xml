@@ -3,15 +3,15 @@
   <groupId>org.dataone</groupId>
   <artifactId>d1_cn_index_tool</artifactId>
   <name>d1_cn_index_tool</name>
-  <version>1.0.0-RC6-SNAPSHOT</version>
+  <version>1.0.0-RC6</version>
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  		<d1_common_version>1.0.1-RC8-SNAPSHOT</d1_common_version>
-  		<d1_libclient_version>1.0.1-RC9-SNAPSHOT</d1_libclient_version>
-  		<d1_cn_common_version>1.0.0-RC6-SNAPSHOT</d1_cn_common_version>
-  		<index_common_version>1.0.0-RC6-SNAPSHOT</index_common_version>
-  		<index_generator_version>1.0.0-RC6-SNAPSHOT</index_generator_version>
-  		<index_processor_version>1.0.0-RC6-SNAPSHOT</index_processor_version>
+  		<d1_common_version>1.0.1-RC8</d1_common_version>
+  		<d1_libclient_version>1.0.1-RC9</d1_libclient_version>
+  		<d1_cn_common_version>1.0.0-RC6</d1_cn_common_version>
+  		<index_common_version>1.0.0-RC6</index_common_version>
+  		<index_generator_version>1.0.0-RC6</index_generator_version>
+  		<index_processor_version>1.0.0-RC6</index_processor_version>
   		<spring.version>3.1.1.RELEASE</spring.version>
   		<hazelcast.version>1.9.4.6</hazelcast.version>
 	</properties>
