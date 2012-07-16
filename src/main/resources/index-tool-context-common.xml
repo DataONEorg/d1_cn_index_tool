@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   	xmlns:context="http://www.springframework.org/schema/context"
+  	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+  		http://www.springframework.org/schema/beans/spring-beans.xsd
+    	http://www.springframework.org/schema/context
+    	http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+    	
+	<import resource="file:/etc/dataone/index/index-generation-context/application-context-eml-base.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-eml200.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-eml201.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-eml210.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-eml211.xml" />
+
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-fgdc-std-001-1998.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-fgdc-std-0011-1999.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-fgdc-std-0012-1999.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-fgdc-base.xml" />
+ 	
+
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-resourcemap.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-systemmeta100.xml" />
+ 		
+	<import resource="classpath:generator-context.xml"/>
+ 	<import resource="classpath:index-processor-context.xml"/>
+</beans>

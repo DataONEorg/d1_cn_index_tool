@@ -54,6 +54,9 @@ public class SolrIndexBuildTool {
     private static final String HZ_IDENTIFIERS = Settings.getConfiguration().getString(
             "dataone.hazelcast.identifiers");
 
+    private static final String DEFAULT_INDEX_APPLICATION_CONTEXT = "index-tool-context.xml";
+    private static final String NEXT_INDEX_APPLICATION_CONTEXT = "index-tool-next-context.xml";
+
     private HazelcastClient hzClient;
     private IMap<Identifier, SystemMetadata> systemMetadata;
     private IMap<Identifier, String> objectPaths;
@@ -62,6 +65,8 @@ public class SolrIndexBuildTool {
 
     private IndexTaskGenerator generator;
     private IndexTaskProcessor processor;
+
+    private boolean buildNextIndex = false;
 
     public SolrIndexBuildTool() {
     }
@@ -72,6 +77,7 @@ public class SolrIndexBuildTool {
         String dateString = null;
         boolean help = false;
         boolean fullRefresh = false;
+        boolean migrate = false;
         for (String arg : args) {
             if (StringUtils.startsWith(arg, "-d")) {
                 dateString = StringUtils.substringAfter(arg, "-d");
@@ -85,6 +91,8 @@ public class SolrIndexBuildTool {
                 help = true;
             } else if (StringUtils.startsWith(arg, "-a")) {
                 fullRefresh = true;
+            } else if (StringUtils.startsWith(arg, "-migrate")) {
+                migrate = true;
             }
         }
 
@@ -103,10 +111,17 @@ public class SolrIndexBuildTool {
                     + dateFormat.format(dateParameter) + ".");
         }
 
+        if (migrate) {
+            System.out
+                    .println("Performing refresh/build against the next version of search index.");
+        } else {
+            System.out.println("Performing refresh/build against live search index.");
+        }
+
         System.out.println("Starting solr index refresh.");
 
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
-
+        indexTool.setBuildNextIndex(migrate);
         try {
             refreshSolrIndex(indexTool, dateParameter);
         } catch (Exception e) {
@@ -179,7 +194,11 @@ public class SolrIndexBuildTool {
     }
 
     private void configureContext() {
-        context = new ClassPathXmlApplicationContext("index-tool-context.xml");
+        if (buildNextIndex) {
+            context = new ClassPathXmlApplicationContext(NEXT_INDEX_APPLICATION_CONTEXT);
+        } else {
+            context = new ClassPathXmlApplicationContext(DEFAULT_INDEX_APPLICATION_CONTEXT);
+        }
         generator = (IndexTaskGenerator) context.getBean("indexTaskGenerator");
         processor = (IndexTaskProcessor) context.getBean("indexTaskProcessor");
     }
@@ -194,10 +213,10 @@ public class SolrIndexBuildTool {
         System.out.println("This tool indexes objects the CN's system metadata map.");
         System.out.println("   Nothing is removed from the solr index, just added/updated.");
         System.out.println(" ");
-        System.out.println("Please stop the d1-cn-index-processor while this tool runs: ");
-        System.out.println("       /etc/init.d/d1-cn-index-processor stop");
+        System.out.println("Please stop the d1-index-task-processor while this tool runs: ");
+        System.out.println("       /etc/init.d/d1-index-task-processor stop");
         System.out.println("And restart whent the tool finishes:");
-        System.out.println("       /etc/init.d/d1-cn-index-processor start");
+        System.out.println("       /etc/init.d/d1-index-task-processor start");
         System.out.println(" ");
         System.out.println("-d     System data modified date to begin index build/refresh from.");
         System.out.println("       Data objects modified/added after this date will be indexed.");
@@ -205,6 +224,13 @@ public class SolrIndexBuildTool {
         System.out.println(" ");
         System.out.println("-a     Build/refresh all data objects regardless of modified date.");
         System.out.println(" ");
+        System.out.println("-indexNext   Build/refresh data object into the next search index");
+        System.out.println("             version's core - as configured in: ");
+        System.out.println("              /etc/dataone/solr-next.properties");
         System.out.println("Either -d or -a option must be specified.");
+    }
+
+    private void setBuildNextIndex(boolean next) {
+        this.buildNextIndex = next;
     }
 }

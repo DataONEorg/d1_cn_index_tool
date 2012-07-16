@@ -6,6 +6,6 @@
     	http://www.springframework.org/schema/context
     	http://www.springframework.org/schema/context/spring-context-3.0.xsd">
     	
- 	<context:property-placeholder location="file:/etc/dataone/index/jdbc.properties, file:/etc/dataone/index/solr.properties"/>
+ 	<context:property-placeholder location="file:/etc/dataone/index/jdbc.properties, file:/etc/dataone/index/solr-next.properties"/>
 	<import resource="index-tool-context-common.xml"/>
 </beans>
