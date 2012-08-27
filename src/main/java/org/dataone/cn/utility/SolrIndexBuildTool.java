@@ -22,6 +22,13 @@
 
 package org.dataone.cn.utility;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -78,12 +85,15 @@ public class SolrIndexBuildTool {
         boolean help = false;
         boolean fullRefresh = false;
         boolean migrate = false;
+        String pidFile = null;
+        int options = 0;
         for (String arg : args) {
             if (StringUtils.startsWith(arg, "-d")) {
                 dateString = StringUtils.substringAfter(arg, "-d");
                 dateString = StringUtils.trim(dateString);
                 try {
                     dateParameter = dateFormat.parse(dateString);
+                    options++;
                 } catch (ParseException e) {
                     System.out.println("Unable to parse provided date string: " + dateString);
                 }
@@ -91,24 +101,34 @@ public class SolrIndexBuildTool {
                 help = true;
             } else if (StringUtils.startsWith(arg, "-a")) {
                 fullRefresh = true;
+                options++;
             } else if (StringUtils.startsWith(arg, "-migrate")) {
                 migrate = true;
+            } else if (StringUtils.startsWith(arg, "-pidFile")) {
+                pidFile = StringUtils.trim(StringUtils.substringAfter(arg, "-pidFile"));
+                options++;
             }
         }
 
-        if (help || (fullRefresh == false && dateParameter == null)) {
+        if (help || (fullRefresh == false && dateParameter == null && pidFile == null)) {
             showHelp();
             return;
-        } else if (fullRefresh == true && dateParameter != null) {
-            System.out.println("Both -a and -d options provided, using date parameter: "
-                    + dateString);
-            fullRefresh = false;
         }
+        if (options > 1) {
+            System.out.println("Only one option amoung -a, -d, -pidFile may be used at a time.");
+            showHelp();
+            return;
+        } else if (options == 0) {
+            System.out.println("At least one option amoung -a, -d, -pidFile must be specified.");
+        }
+
         if (fullRefresh) {
             System.out.println("Performing full build/refresh of solr index.");
         } else if (dateParameter != null) {
             System.out.println("Performing (re)build from date: "
                     + dateFormat.format(dateParameter) + ".");
+        } else if (pidFile != null) {
+            System.out.println("Performing refresh/index for pids found in file: " + pidFile);
         }
 
         if (migrate) {
@@ -123,7 +143,7 @@ public class SolrIndexBuildTool {
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
         indexTool.setBuildNextIndex(migrate);
         try {
-            refreshSolrIndex(indexTool, dateParameter);
+            refreshSolrIndex(indexTool, dateParameter, pidFile);
         } catch (Exception e) {
             System.out.println("Solr index refresh failed: " + e.getMessage());
             e.printStackTrace(System.out);
@@ -132,11 +152,52 @@ public class SolrIndexBuildTool {
         System.out.println("Exiting solr index refresh tool.");
     }
 
-    private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date dateParameter) {
+    private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date dateParameter,
+            String pidFilePath) {
         indexTool.configureContext();
         indexTool.configureHazelcast();
-        indexTool.generateIndexTasksAndProcess(dateParameter);
+
+        if (pidFilePath == null) {
+            indexTool.generateIndexTasksAndProcess(dateParameter);
+        } else {
+            indexTool.updateIndexForPids(pidFilePath);
+        }
         indexTool.shutdown();
+    }
+
+    private void updateIndexForPids(String pidFilePath) {
+        InputStream pidFileStream = openPidFile(pidFilePath);
+        if (pidFileStream != null) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
+                    Charset.forName("UTF-8")));
+            try {
+                String line = null;
+                while ((line = br.readLine()) != null) {
+                    createIndexTaskForPid(StringUtils.trim(line));
+                }
+                System.out.println("All tasks generated, now updating index....");
+                processIndexTasks();
+                System.out.println("Index update complete.");
+            } catch (IOException e) {
+                System.out.println("Error reading line from pid file");
+                return;
+            }
+        }
+    }
+
+    private void createIndexTaskForPid(String pid) {
+        if (StringUtils.isNotEmpty(pid)) {
+            Identifier identifier = new Identifier();
+            identifier.setValue(pid);
+            SystemMetadata smd = systemMetadata.get(identifier);
+            if (smd == null) {
+                System.out.println("Unable to get system metadata for id: " + pid);
+            } else {
+                String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+                generator.processSystemMetaDataUpdate(smd, objectPath);
+                System.out.println("Created index task for id: " + pid);
+            }
+        }
     }
 
     // if dateParameter is null -- full refresh
@@ -224,13 +285,28 @@ public class SolrIndexBuildTool {
         System.out.println(" ");
         System.out.println("-a     Build/refresh all data objects regardless of modified date.");
         System.out.println(" ");
-        System.out.println("-indexNext   Build/refresh data object into the next search index");
+        System.out
+                .println("-pidFile   Refresh index document for pids contained in the file path ");
+        System.out
+                .println("           supplied with this option.  File should contain one pid per line.");
+        System.out.println(" ");
+        System.out.println("-migrate   Build/refresh data object into the next search index");
         System.out.println("             version's core - as configured in: ");
         System.out.println("              /etc/dataone/solr-next.properties");
-        System.out.println("Either -d or -a option must be specified.");
+        System.out.println("Exactly one option amoung -d or -a or -pidFile must be specified.");
     }
 
     private void setBuildNextIndex(boolean next) {
         this.buildNextIndex = next;
+    }
+
+    private InputStream openPidFile(String pidFilePath) {
+        InputStream pidFileStream = null;
+        try {
+            pidFileStream = new FileInputStream(pidFilePath);
+        } catch (FileNotFoundException e) {
+            System.out.println("Unable to open file at: " + pidFilePath + ".  Exiting.");
+        }
+        return pidFileStream;
     }
 }
