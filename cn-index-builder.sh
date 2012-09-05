@@ -25,7 +25,7 @@ WORKSPACE_DIR=/Users/sroseboo/development/workspace/
 
 ## path from workspace_dir to root of projects
 PROJECT_DIR=indexer/
-PROJECTS=(d1_common_java d1_libclient_java d1_cn_common d1_cn_noderegistry indexerapi d1_cn_index_common d1_cn_index_generator d1_cn_index_processor d1_cn_index_tool)
+PROJECTS=(d1_common_java d1_libclient_java d1_cn_common d1_cn_noderegistry d1_cn_index_common d1_cn_index_generator d1_cn_index_processor d1_cn_index_tool)
 NUM_PROJECTS=${#PROJECTS[@]}
 
 for ((i=0;i<$NUM_PROJECTS;i++)); do
@@ -45,11 +45,11 @@ BUILDOUT_JARS=(d1_cn_index_generator/target/d1_index_task_generator_daemon.jar
 d1_cn_index_processor/target/d1_index_task_processor_daemon.jar d1_cn_index_tool/target/d1_index_build_tool.jar)
 NUM_JARS=${#BUILDOUT_JARS[@]}
 
-for ((i=0;i<$NUM_JARS;i++)); do
-	JAR=${BUILDOUT_JARS[${i}]}
-	echo ${JAR}
-	cp ${WORKSPACE_DIR}${PROJECT_DIR}${JAR} ${WORKSPACE_DIR}${BUILDOUT_DIR}
-done
+#for ((i=0;i<$NUM_JARS;i++)); do
+#	JAR=${BUILDOUT_JARS[${i}]}
+#	echo ${JAR}
+#	cp ${WORKSPACE_DIR}${PROJECT_DIR}${JAR} ${WORKSPACE_DIR}${BUILDOUT_DIR}
+#done
 
 ### add input options to control:
 # 1. build and copy jars, copy so
