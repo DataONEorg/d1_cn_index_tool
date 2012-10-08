@@ -86,6 +86,7 @@ public class SolrIndexBuildTool {
         boolean fullRefresh = false;
         boolean migrate = false;
         String pidFile = null;
+        int totalToProcess = 0;
         int options = 0;
         for (String arg : args) {
             if (StringUtils.startsWith(arg, "-d")) {
@@ -107,6 +108,9 @@ public class SolrIndexBuildTool {
             } else if (StringUtils.startsWith(arg, "-pidFile")) {
                 pidFile = StringUtils.trim(StringUtils.substringAfter(arg, "-pidFile"));
                 options++;
+            } else if (StringUtils.startsWith(arg, "-c")) {
+                String countStr = StringUtils.trim(StringUtils.substringAfter(arg, "-c"));
+                totalToProcess = Integer.valueOf(countStr).intValue();
             }
         }
 
@@ -143,7 +147,7 @@ public class SolrIndexBuildTool {
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
         indexTool.setBuildNextIndex(migrate);
         try {
-            refreshSolrIndex(indexTool, dateParameter, pidFile);
+            refreshSolrIndex(indexTool, dateParameter, pidFile, totalToProcess);
         } catch (Exception e) {
             System.out.println("Solr index refresh failed: " + e.getMessage());
             e.printStackTrace(System.out);
@@ -153,12 +157,12 @@ public class SolrIndexBuildTool {
     }
 
     private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date dateParameter,
-            String pidFilePath) {
+            String pidFilePath, int totalToProcess) {
         indexTool.configureContext();
         indexTool.configureHazelcast();
 
         if (pidFilePath == null) {
-            indexTool.generateIndexTasksAndProcess(dateParameter);
+            indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess);
         } else {
             indexTool.updateIndexForPids(pidFilePath);
         }
@@ -201,7 +205,7 @@ public class SolrIndexBuildTool {
     }
 
     // if dateParameter is null -- full refresh
-    private void generateIndexTasksAndProcess(Date dateParameter) {
+    private void generateIndexTasksAndProcess(Date dateParameter, int totalToProcess) {
         System.out.print("Generating index updates: ");
         int count = 0;
         System.out.println("System Identifiers HzCast structure contains: " + pids.size()
@@ -224,6 +228,10 @@ public class SolrIndexBuildTool {
                     }
                     if (count % 10 == 0) {
                         System.out.print(".");
+                    }
+                    if (totalToProcess > 0 && count >= totalToProcess) {
+                        System.out.print("Total to process reached. Exiting after processing.");
+                        break;
                     }
                 }
             }
@@ -284,6 +292,10 @@ public class SolrIndexBuildTool {
         System.out.println("       Date format: mm/dd/yyyy.");
         System.out.println(" ");
         System.out.println("-a     Build/refresh all data objects regardless of modified date.");
+        System.out.println(" ");
+        System.out
+                .println("-c     Build/refresh a number data objects, the number configured by this option.");
+        System.out.println("        This option is primarily intendted for testing purposes.");
         System.out.println(" ");
         System.out
                 .println("-pidFile   Refresh index document for pids contained in the file path ");
