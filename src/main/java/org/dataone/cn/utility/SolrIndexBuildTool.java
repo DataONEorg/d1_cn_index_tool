@@ -295,7 +295,7 @@ public class SolrIndexBuildTool {
         System.out.println(" ");
         System.out
                 .println("-c     Build/refresh a number data objects, the number configured by this option.");
-        System.out.println("        This option is primarily intendted for testing purposes.");
+        System.out.println("        This option is primarily intended for testing purposes.");
         System.out.println(" ");
         System.out
                 .println("-pidFile   Refresh index document for pids contained in the file path ");
