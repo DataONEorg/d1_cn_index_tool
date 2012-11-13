@@ -37,7 +37,7 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.dataone.cn.hazelcast.HazelcastClientInstance;
+import org.dataone.cn.hazelcast.HazelcastClientFactory;
 import org.dataone.cn.index.generator.IndexTaskGenerator;
 import org.dataone.cn.index.processor.IndexTaskProcessor;
 import org.dataone.configuration.Settings;
@@ -256,7 +256,7 @@ public class SolrIndexBuildTool {
 
     private void configureHazelcast() {
         logger.info("starting hazelcast client...");
-        hzClient = HazelcastClientInstance.getHazelcastClient();
+        hzClient = HazelcastClientFactory.getStorageClient();
         systemMetadata = hzClient.getMap(HZ_SYSTEM_METADATA);
         objectPaths = hzClient.getMap(HZ_OBJECT_PATH);
         pids = hzClient.getSet(HZ_IDENTIFIERS);
