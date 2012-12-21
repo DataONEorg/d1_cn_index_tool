@@ -13,7 +13,7 @@
   		<index_generator_version>1.2.0-SNAPSHOT</index_generator_version>
   		<index_processor_version>1.2.0-SNAPSHOT</index_processor_version>
   		<spring.version>3.1.1.RELEASE</spring.version>
-  		<hazelcast.version>2.4.1-SNAPSHOT</hazelcast.version>
+  		<hazelcast.version>2.4.1</hazelcast.version>
 	</properties>
   
   <dependencies>
