@@ -111,6 +111,7 @@ public class SolrIndexBuildTool {
             } else if (StringUtils.startsWith(arg, "-c")) {
                 String countStr = StringUtils.trim(StringUtils.substringAfter(arg, "-c"));
                 totalToProcess = Integer.valueOf(countStr).intValue();
+                options++;
             }
         }
 
@@ -119,11 +120,13 @@ public class SolrIndexBuildTool {
             return;
         }
         if (options > 1) {
-            System.out.println("Only one option amoung -a, -d, -pidFile may be used at a time.");
+            System.out
+                    .println("Only one option amoung -a, -d, -c, -pidFile may be used at a time.");
             showHelp();
             return;
         } else if (options == 0) {
-            System.out.println("At least one option amoung -a, -d, -pidFile must be specified.");
+            System.out
+                    .println("At least one option amoung -a, -d, -c, -pidFile must be specified.");
         }
 
         if (fullRefresh) {
