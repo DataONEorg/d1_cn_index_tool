@@ -46,6 +46,7 @@
 			<groupId>org.dataone</groupId>
 			<artifactId>d1_cn_index_processor</artifactId>
 			<version>${index_processor_version}</version>
+			<classifier>shaded</classifier>
 		</dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
