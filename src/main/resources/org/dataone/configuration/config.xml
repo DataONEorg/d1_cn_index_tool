@@ -2,4 +2,5 @@
 <!-- Apache Commons Configuration -->
 <configuration>
 	<properties fileName="index-tool.properties"/>
+	<properties fileName="file:/etc/dataone/node.properties" />
 </configuration>
