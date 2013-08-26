@@ -3,7 +3,7 @@
   <groupId>org.dataone</groupId>
   <artifactId>d1_cn_index_tool</artifactId>
   <name>d1_cn_index_tool</name>
-  <version>1.2.0</version>
+  <version>1.2</version>
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   		<d1_common_version>1.1</d1_common_version>
