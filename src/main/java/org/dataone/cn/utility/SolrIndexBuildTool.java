@@ -42,7 +42,7 @@ import org.dataone.cn.index.generator.IndexTaskGenerator;
 import org.dataone.cn.index.processor.IndexTaskProcessor;
 import org.dataone.configuration.Settings;
 import org.dataone.service.types.v1.Identifier;
-import org.dataone.service.types.v1.SystemMetadata;
+import org.dataone.service.types.v2.SystemMetadata;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
