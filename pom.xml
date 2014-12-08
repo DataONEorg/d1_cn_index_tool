@@ -3,7 +3,7 @@
   <groupId>org.dataone</groupId>
   <artifactId>d1_cn_index_tool</artifactId>
   <name>d1_cn_index_tool</name>
-  <version>1.4.1</version>
+  <version>1.4.2</version>
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   		<d1_common_version>1.2.2</d1_common_version>
@@ -11,7 +11,7 @@
   		<d1_cn_common_version>1.2.1</d1_cn_common_version>
   		<index_common_version>1.3.1</index_common_version>
   		<index_generator_version>1.3.1</index_generator_version>
-  		<index_processor_version>1.4.2</index_processor_version>
+  		<index_processor_version>1.4.3</index_processor_version>
   		<spring.version>3.1.4.RELEASE</spring.version>
   		<hazelcast.version>2.6.9</hazelcast.version>
 	</properties>
