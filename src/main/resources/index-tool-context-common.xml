@@ -37,6 +37,8 @@
     
     <import resource="file:/etc/dataone/index/index-generation-context/application-context-prov-base.xml" />
     <import resource="file:/etc/dataone/index/index-generation-context/application-context-provone100.xml" />
+
+    <import resource="file:/etc/dataone/index/index-generation-context/application-context-annotator.xml" />
     
 	<import resource="classpath:generator-context.xml"/>
  	<import resource="classpath:index-processor-context.xml"/>
