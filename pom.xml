@@ -26,6 +26,12 @@
         	<groupId>org.dataone</groupId>
         	<artifactId>d1_libclient_java</artifactId>
         	<version>${d1_libclient_version}</version>
+        	<exclusions>
+        		<exclusion>
+					<groupId>com.hp.hpl.jena</groupId>
+					<artifactId>jena</artifactId>
+				</exclusion>
+        	</exclusions>
         </dependency>
 		<dependency>
 			<groupId>org.dataone</groupId>
