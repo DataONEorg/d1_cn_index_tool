@@ -31,6 +31,9 @@
     <import resource="file:/etc/dataone/index/index-generation-context/application-context-datacite-base.xml" />
     <import resource="file:/etc/dataone/index/index-generation-context/application-context-datacite-3.xml" />
     
+    <import resource="file:/etc/dataone/index/index-generation-context/application-context-isotc211-base.xml" />
+    <import resource="file:/etc/dataone/index/index-generation-context/application-context-isotc211.xml" />
+    
  	<import resource="file:/etc/dataone/index/index-generation-context/application-context-resourcemap.xml" />
  	<import resource="file:/etc/dataone/index/index-generation-context/application-context-systemmeta100.xml" />
  		
