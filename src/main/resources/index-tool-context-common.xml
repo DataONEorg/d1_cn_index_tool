@@ -9,6 +9,7 @@
  	<import resource="file:/etc/dataone/index/index-generation-context/application-context-resourcemap.xml" />
  	<import resource="file:/etc/dataone/index/index-generation-context/application-context-systemmeta200.xml" />
  	<import resource="file:/etc/dataone/index/index-generation-context/application-context-delete-subprocessors.xml" />
+ 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-reprocess-subprocessors.xml" />
     	
 	<import resource="file:/etc/dataone/index/index-generation-context/application-context-eml-base.xml" />
  	<import resource="file:/etc/dataone/index/index-generation-context/application-context-eml200.xml" />
