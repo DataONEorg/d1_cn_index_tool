@@ -87,6 +87,7 @@ public class SolrIndexBuildTool {
         boolean migrate = false;
         String pidFile = null;
         int totalToProcess = 0;
+        int startIndex = 0;
         int options = 0;
         for (String arg : args) {
             if (StringUtils.startsWith(arg, "-d")) {
@@ -108,6 +109,10 @@ public class SolrIndexBuildTool {
             } else if (StringUtils.startsWith(arg, "-pidFile")) {
                 pidFile = StringUtils.trim(StringUtils.substringAfter(arg, "-pidFile"));
                 options++;
+            } else if (StringUtils.startsWith(arg, "-startAt")) {
+                options++;
+                String startAt = StringUtils.trim(StringUtils.substringAfter(arg, "-startAt"));
+                startIndex = Integer.valueOf(startAt).intValue();
             } else if (StringUtils.startsWith(arg, "-c")) {
                 String countStr = StringUtils.trim(StringUtils.substringAfter(arg, "-c"));
                 totalToProcess = Integer.valueOf(countStr).intValue();
@@ -121,12 +126,12 @@ public class SolrIndexBuildTool {
         }
         if (options > 1) {
             System.out
-                    .println("Only one option amoung -a, -d, -c, -pidFile may be used at a time.");
+                    .println("Only one option amoung -a, -d, -c, -pidFile, -startAt may be used at a time.");
             showHelp();
             return;
         } else if (options == 0) {
             System.out
-                    .println("At least one option amoung -a, -d, -c, -pidFile must be specified.");
+                    .println("At least one option amoung -a, -d, -c, -pidFile, -startAt must be specified.");
         }
 
         if (fullRefresh) {
@@ -150,7 +155,7 @@ public class SolrIndexBuildTool {
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
         indexTool.setBuildNextIndex(migrate);
         try {
-            refreshSolrIndex(indexTool, dateParameter, pidFile, totalToProcess);
+            refreshSolrIndex(indexTool, dateParameter, pidFile, totalToProcess, startIndex);
         } catch (Exception e) {
             System.out.println("Solr index refresh failed: " + e.getMessage());
             e.printStackTrace(System.out);
@@ -160,12 +165,12 @@ public class SolrIndexBuildTool {
     }
 
     private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date dateParameter,
-            String pidFilePath, int totalToProcess) {
+            String pidFilePath, int totalToProcess, int startIndex) {
         indexTool.configureContext();
         indexTool.configureHazelcast();
 
         if (pidFilePath == null) {
-            indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess);
+            indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
         } else {
             indexTool.updateIndexForPids(pidFilePath);
         }
@@ -208,12 +213,16 @@ public class SolrIndexBuildTool {
     }
 
     // if dateParameter is null -- full refresh
-    private void generateIndexTasksAndProcess(Date dateParameter, int totalToProcess) {
+    private void generateIndexTasksAndProcess(Date dateParameter, int totalToProcess, int startIndex) {
         System.out.print("Generating index updates: ");
         int count = 0;
         System.out.println("System Identifiers HzCast structure contains: " + pids.size()
                 + " identifiers.");
         for (Identifier smdId : pids) {
+            count++;
+            if (count < startIndex) {
+                continue;
+            }
             SystemMetadata smd = systemMetadata.get(smdId);
             if (dateParameter == null
                     || dateParameter.compareTo(smd.getDateSysMetadataModified()) <= 0) {
@@ -224,7 +233,6 @@ public class SolrIndexBuildTool {
                 } else {
                     String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
                     generator.processSystemMetaDataUpdate(smd, objectPath);
-                    count++;
                     if (count > 1000) {
                         processIndexTasks();
                         count = 0;
@@ -299,6 +307,9 @@ public class SolrIndexBuildTool {
         System.out
                 .println("-c     Build/refresh a number data objects, the number configured by this option.");
         System.out.println("        This option is primarily intended for testing purposes.");
+        System.out.println(" ");
+        System.out
+                .println("-startAt  Build/refresh objects, starting at this index in the hazelcast Identifiers Set.");
         System.out.println(" ");
         System.out
                 .println("-pidFile   Refresh index document for pids contained in the file path ");
