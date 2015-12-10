@@ -225,6 +225,9 @@ public class SolrIndexBuildTool {
                 System.out.println("Skipping pid: " + smdId.getValue());
                 continue;
             }
+            if (startIndex > 0) {
+                startIndex = -1;
+            }
             SystemMetadata smd = systemMetadata.get(smdId);
             if (dateParameter == null
                     || dateParameter.compareTo(smd.getDateSysMetadataModified()) <= 0) {
