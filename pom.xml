@@ -10,7 +10,7 @@
   		<d1_libclient_version>2.0.0</d1_libclient_version>
   		<d1_cn_common_version>2.0.0</d1_cn_common_version>
   		<index_common_version>2.0.0</index_common_version>
-  		<index_generator_version>2.0.1</index_generator_version>
+  		<index_generator_version>2.0.0</index_generator_version>
   		<index_processor_version>2.0.1</index_processor_version>
   		<spring.version>3.1.4.RELEASE</spring.version>
   		<hazelcast.version>2.4.1</hazelcast.version>
