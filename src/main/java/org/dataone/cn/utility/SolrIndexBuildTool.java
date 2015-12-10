@@ -120,7 +120,8 @@ public class SolrIndexBuildTool {
             }
         }
 
-        if (help || (fullRefresh == false && dateParameter == null && pidFile == null)) {
+        if (help
+                || (fullRefresh == false && dateParameter == null && pidFile == null && startIndex == 0)) {
             showHelp();
             return;
         }
