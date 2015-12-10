@@ -221,6 +221,7 @@ public class SolrIndexBuildTool {
         for (Identifier smdId : pids) {
             count++;
             if (count < startIndex) {
+                System.out.println("Skipping pid: " + smdId.getValue());
                 continue;
             }
             SystemMetadata smd = systemMetadata.get(smdId);
