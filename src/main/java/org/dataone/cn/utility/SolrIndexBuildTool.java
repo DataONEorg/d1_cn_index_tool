@@ -35,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.dataone.cn.hazelcast.HazelcastClientFactory;
@@ -64,6 +65,12 @@ public class SolrIndexBuildTool {
     private static final String DEFAULT_INDEX_APPLICATION_CONTEXT = "index-tool-context.xml";
     private static final String NEXT_INDEX_APPLICATION_CONTEXT = "index-tool-next-context.xml";
 
+    /** whether to add documents in batch - avoiding multiple solr commands */
+    private static boolean BATCH_UPDATE = Settings.getConfiguration().getBoolean("dataone.indexing.tool.batchUpdate",  false);
+    
+    /** the number of documents to process as a time */
+    private static int BATCH_UPDATE_SIZE = Settings.getConfiguration().getInt("dataone.indexing.batchUpdateSize",  1000);
+        
     private HazelcastClient hzClient;
     private IMap<Identifier, SystemMetadata> systemMetadata;
     private IMap<Identifier, String> objectPaths;
@@ -170,30 +177,38 @@ public class SolrIndexBuildTool {
         indexTool.configureContext();
         indexTool.configureHazelcast();
 
+        System.out.println("Starting re-indexing... (" + (new Date()) + ")");
+        
         if (pidFilePath == null) {
             indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
         } else {
             indexTool.updateIndexForPids(pidFilePath);
         }
+        
+        System.out.println("Finished re-indexing. (" + (new Date()) + ")");
         indexTool.shutdown();
     }
 
     private void updateIndexForPids(String pidFilePath) {
         InputStream pidFileStream = openPidFile(pidFilePath);
         if (pidFileStream != null) {
-            BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
-                    Charset.forName("UTF-8")));
+            
             try {
+                BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
+                        Charset.forName("UTF-8")));
+                
                 String line = null;
                 while ((line = br.readLine()) != null) {
                     createIndexTaskForPid(StringUtils.trim(line));
-                }
+            }
                 System.out.println("All tasks generated, now updating index....");
                 processIndexTasks();
                 System.out.println("Index update complete.");
             } catch (IOException e) {
                 System.out.println("Error reading line from pid file");
                 return;
+            } finally {
+                IOUtils.closeQuietly(pidFileStream);
             }
         }
     }
@@ -238,7 +253,8 @@ public class SolrIndexBuildTool {
                 } else {
                     String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
                     generator.processSystemMetaDataUpdate(smd, objectPath);
-                    if (count > 1000) {
+                    
+                    if (count > BATCH_UPDATE_SIZE) {
                         processIndexTasks();
                         count = 0;
                     }
@@ -261,7 +277,10 @@ public class SolrIndexBuildTool {
     }
 
     private void processIndexTasks() {
-        processor.processIndexTaskQueue();
+        if (BATCH_UPDATE)
+            processor.batchProcessIndexTaskQueue();
+        else
+            processor.processIndexTaskQueue();
     }
 
     private String retrieveObjectPath(String pid) {
