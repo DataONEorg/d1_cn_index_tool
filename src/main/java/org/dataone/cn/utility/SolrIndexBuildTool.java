@@ -184,7 +184,11 @@ public class SolrIndexBuildTool {
         } else {
             indexTool.updateIndexForPids(pidFilePath);
         }
-        
+        try {
+            Thread.sleep(30000);//sleep 30 seconds to wait threads to be finished.
+        } catch (Exception e) {
+            
+        }
         System.out.println("Finished re-indexing. (" + (new Date()) + ")");
         indexTool.shutdown();
     }
