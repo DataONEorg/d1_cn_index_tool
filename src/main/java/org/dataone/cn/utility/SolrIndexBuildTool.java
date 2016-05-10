@@ -33,7 +33,9 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
@@ -186,10 +188,17 @@ public class SolrIndexBuildTool {
             indexTool.updateIndexForPids(pidFilePath);
         }
         try {
-            Thread.sleep(60000);
-            if( indexTool.getIndexTaskProcessor().getExecutorService() != null) {
-                indexTool.getIndexTaskProcessor().getExecutorService().shutdown();
-                indexTool.getIndexTaskProcessor().getExecutorService().awaitTermination(30, TimeUnit.MINUTES);
+            Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
+            for(Future future : futures) {
+                for(int i=0; i<60; i++) {
+                    if(future != null && !future.isDone()) {
+                        System.out.println("A future has NOT been done. Wait 5 seconds");
+                        Thread.sleep(5000);
+                    } else {
+                        System.out.println("A future has been done. Ignore it");
+                        break;
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
