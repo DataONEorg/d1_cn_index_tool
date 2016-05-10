@@ -234,7 +234,7 @@ public class SolrIndexBuildTool {
 
     // if dateParameter is null -- full refresh
     private void generateIndexTasksAndProcess(Date dateParameter, int totalToProcess, int startIndex) {
-        System.out.print("Generating index updates: ");
+        System.out.print("Generating index updates: "+(new Date()));
         int count = 0;
         System.out.println("System Identifiers HzCast structure contains: " + pids.size()
                 + " identifiers.");
@@ -258,10 +258,10 @@ public class SolrIndexBuildTool {
                     String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
                     generator.processSystemMetaDataUpdate(smd, objectPath);
                     
-                    if (count > BATCH_UPDATE_SIZE) {
+                    /*if (count > BATCH_UPDATE_SIZE) {
                         processIndexTasks();
                         count = 0;
-                    }
+                    }*/
                     if (count % 10 == 0) {
                         System.out.print(".");
                     }
@@ -272,12 +272,12 @@ public class SolrIndexBuildTool {
                 }
             }
         }
-        System.out.println("Finished generating index update.");
+        System.out.println("Finished generating index update."+(new Date()));
         System.out.println("Processing index task requests.");
         // call processor:
         // it won't be called on last iteration of the for loop if count < 1000
         processIndexTasks();
-        System.out.println("Finished processing index task requests.");
+        //System.out.println("Finished processing index task requests.");
     }
 
     private void processIndexTasks() {
