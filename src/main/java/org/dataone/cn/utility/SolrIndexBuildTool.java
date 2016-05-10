@@ -258,10 +258,10 @@ public class SolrIndexBuildTool {
                     String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
                     generator.processSystemMetaDataUpdate(smd, objectPath);
                     
-                    /*if (count > BATCH_UPDATE_SIZE) {
+                    if (count > BATCH_UPDATE_SIZE) {
                         processIndexTasks();
                         count = 0;
-                    }*/
+                    }
                     if (count % 10 == 0) {
                         System.out.print(".");
                     }
@@ -272,8 +272,8 @@ public class SolrIndexBuildTool {
                 }
             }
         }
-        System.out.println("Finished generating index update."+(new Date()));
-        System.out.println("Processing index task requests.");
+        //System.out.println("Finished generating index update."+(new Date()));
+        //System.out.println("Processing index task requests.");
         // call processor:
         // it won't be called on last iteration of the for loop if count < 1000
         processIndexTasks();
