@@ -34,6 +34,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -185,9 +186,13 @@ public class SolrIndexBuildTool {
             indexTool.updateIndexForPids(pidFilePath);
         }
         try {
-            Thread.sleep(30000);//sleep 30 seconds to wait threads to be finished.
+            Thread.sleep(60000);
+            if( indexTool.getIndexTaskProcessor().getExecutorService() != null) {
+                indexTool.getIndexTaskProcessor().getExecutorService().shutdown();
+                indexTool.getIndexTaskProcessor().getExecutorService().awaitTermination(30, TimeUnit.MINUTES);
+            }
         } catch (Exception e) {
-            
+            e.printStackTrace();
         }
         System.out.println("Finished re-indexing. (" + (new Date()) + ")");
         indexTool.shutdown();
@@ -362,5 +367,9 @@ public class SolrIndexBuildTool {
             System.out.println("Unable to open file at: " + pidFilePath + ".  Exiting.");
         }
         return pidFileStream;
+    }
+    
+    public IndexTaskProcessor getIndexTaskProcessor() {
+        return processor;
     }
 }
