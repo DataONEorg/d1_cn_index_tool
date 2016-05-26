@@ -73,6 +73,9 @@ public class SolrIndexBuildTool {
     
     /** the number of documents to process as a time */
     private static int BATCH_UPDATE_SIZE = Settings.getConfiguration().getInt("dataone.indexing.batchUpdateSize",  1000);
+    
+    /** the number of index task will be generate on one cycle */
+    private static int INDEX_TASK_ONE_CYCLE_SIZE = Settings.getConfiguration().getInt("dataone.indexing.tool.indexTaskOneCycleSize",  1000);
         
     private HazelcastClient hzClient;
     private IMap<Identifier, SystemMetadata> systemMetadata;
@@ -272,7 +275,7 @@ public class SolrIndexBuildTool {
                     String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
                     generator.processSystemMetaDataUpdate(smd, objectPath);
                     
-                    if (count > BATCH_UPDATE_SIZE) {
+                    if (count > INDEX_TASK_ONE_CYCLE_SIZE) {
                         processIndexTasks();
                         count = 0;
                     }
