@@ -32,7 +32,9 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -44,6 +46,7 @@ import org.apache.log4j.Logger;
 import org.dataone.cn.hazelcast.HazelcastClientFactory;
 import org.dataone.cn.index.generator.IndexTaskGenerator;
 import org.dataone.cn.index.processor.IndexTaskProcessor;
+import org.dataone.cn.index.task.IndexTask;
 import org.dataone.configuration.Settings;
 import org.dataone.service.types.v1.Identifier;
 import org.dataone.service.types.v2.SystemMetadata;
@@ -255,6 +258,7 @@ public class SolrIndexBuildTool {
         int count = 0;
         System.out.println("System Identifiers HzCast structure contains: " + pids.size()
                 + " identifiers.");
+        List<IndexTask> queue = new ArrayList<IndexTask> ();
         for (Identifier smdId : pids) {
             count++;
             if (count < startIndex) {
@@ -273,11 +277,18 @@ public class SolrIndexBuildTool {
                             + " exists in pids set but cannot be found in system metadata map.");
                 } else {
                     String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-                    generator.processSystemMetaDataUpdate(smd, objectPath);
+                    //create a task on the memory and doesn't save them into the db
+                    IndexTask task = new IndexTask(smd, objectPath);
+                    task.setAddPriority();
+                    queue.add(task);
+                    //generator.processSystemMetaDataUpdate(smd, objectPath);
                     
                     if (count > INDEX_TASK_ONE_CYCLE_SIZE) {
-                        processIndexTasks();
+                        //processIndexTasks();
+                        processor.processIndexTaskQueue(queue);
                         count = 0;
+                        logger.info("SolrINdexBuildTool.generateIndexTasksAndProcess - empty the queue for the next cycle.");
+                        queue = new ArrayList<IndexTask> ();
                     }
                     if (count % 10 == 0) {
                         System.out.print(".");
@@ -293,8 +304,11 @@ public class SolrIndexBuildTool {
         //System.out.println("Processing index task requests.");
         // call processor:
         // it won't be called on last iteration of the for loop if count < 1000
-        processIndexTasks();
+        //processIndexTasks();
+        processor.processIndexTaskQueue(queue);
         //System.out.println("Finished processing index task requests.");
+        //finally we try to process failed index task again
+        processor.processFailedIndexTaskQueue();
     }
 
     private void processIndexTasks() {
