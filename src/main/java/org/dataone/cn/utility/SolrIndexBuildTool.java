@@ -307,8 +307,8 @@ public class SolrIndexBuildTool {
         //processIndexTasks();
         processor.processIndexTaskQueue(queue);
         //System.out.println("Finished processing index task requests.");
-        //finally we try to process failed index task again
-        processor.processFailedIndexTaskQueue();
+        //finally we try to process some new or failed index tasks generated in above process again
+        processor.processIndexTaskQueue();
     }
 
     private void processIndexTasks() {
