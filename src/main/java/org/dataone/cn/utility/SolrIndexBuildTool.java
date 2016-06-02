@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 import org.dataone.cn.hazelcast.HazelcastClientFactory;
 import org.dataone.cn.index.generator.IndexTaskGenerator;
 import org.dataone.cn.index.processor.IndexTaskProcessor;
+import org.dataone.cn.index.task.IgnoringIndexIdPool;
 import org.dataone.cn.index.task.IndexTask;
 import org.dataone.configuration.Settings;
 import org.dataone.service.types.v1.Identifier;
@@ -260,6 +261,13 @@ public class SolrIndexBuildTool {
                 + " identifiers.");
         List<IndexTask> queue = new ArrayList<IndexTask> ();
         for (Identifier smdId : pids) {
+            SystemMetadata smd = systemMetadata.get(smdId);
+            if(!IgnoringIndexIdPool.isNotIgnorePid(smd)) {
+                //we should skip the pid since it is not supposed to be indexed.
+                System.out.println("PID: " + smdId.getValue()
+                        + " was skipped for indexing since it is in the ignoring id pool.");
+                continue;
+            }
             count++;
             if (count < startIndex) {
                 System.out.println("Skipping pid: " + smdId.getValue());
@@ -268,7 +276,7 @@ public class SolrIndexBuildTool {
             if (startIndex > 0) {
                 startIndex = -1;
             }
-            SystemMetadata smd = systemMetadata.get(smdId);
+            
             if (dateParameter == null
                     || dateParameter.compareTo(smd.getDateSysMetadataModified()) <= 0) {
 
