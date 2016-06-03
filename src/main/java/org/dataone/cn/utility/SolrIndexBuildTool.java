@@ -314,6 +314,23 @@ public class SolrIndexBuildTool {
         // it won't be called on last iteration of the for loop if count < 1000
         //processIndexTasks();
         processor.processIndexTaskQueue(queue);
+        //wait until previous indexing to be finished
+        try {
+            Queue<Future> futures = getIndexTaskProcessor().getFutureQueue();
+            for(Future future : futures) {
+                for(int i=0; i<60; i++) {
+                    if(future != null && !future.isDone()) {
+                        System.out.println("A future has NOT been done. Wait 5 seconds");
+                        Thread.sleep(5000);
+                    } else {
+                        System.out.println("A future has been done. Ignore it");
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         //System.out.println("Finished processing index task requests.");
         //finally we try to process some new or failed index tasks generated in above process again
         processor.processIndexTaskQueue();
