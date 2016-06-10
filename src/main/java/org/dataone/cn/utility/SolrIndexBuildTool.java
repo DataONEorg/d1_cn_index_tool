@@ -32,22 +32,14 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.dataone.cn.hazelcast.HazelcastClientFactory;
 import org.dataone.cn.index.generator.IndexTaskGenerator;
 import org.dataone.cn.index.processor.IndexTaskProcessor;
-import org.dataone.cn.index.task.IgnoringIndexIdPool;
-import org.dataone.cn.index.task.IndexTask;
 import org.dataone.configuration.Settings;
 import org.dataone.service.types.v1.Identifier;
 import org.dataone.service.types.v2.SystemMetadata;
@@ -72,15 +64,6 @@ public class SolrIndexBuildTool {
     private static final String DEFAULT_INDEX_APPLICATION_CONTEXT = "index-tool-context.xml";
     private static final String NEXT_INDEX_APPLICATION_CONTEXT = "index-tool-next-context.xml";
 
-    /** whether to add documents in batch - avoiding multiple solr commands */
-    private static boolean BATCH_UPDATE = Settings.getConfiguration().getBoolean("dataone.indexing.tool.batchUpdate",  false);
-    
-    /** the number of documents to process as a time */
-    private static int BATCH_UPDATE_SIZE = Settings.getConfiguration().getInt("dataone.indexing.batchUpdateSize",  1000);
-    
-    /** the number of index task will be generate on one cycle */
-    private static int INDEX_TASK_ONE_CYCLE_SIZE = Settings.getConfiguration().getInt("dataone.indexing.tool.indexTaskOneCycleSize",  1000);
-        
     private HazelcastClient hzClient;
     private IMap<Identifier, SystemMetadata> systemMetadata;
     private IMap<Identifier, String> objectPaths;
@@ -187,53 +170,30 @@ public class SolrIndexBuildTool {
         indexTool.configureContext();
         indexTool.configureHazelcast();
 
-        System.out.println("Starting re-indexing... (" + (new Date()) + ")");
-        
         if (pidFilePath == null) {
             indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
         } else {
             indexTool.updateIndexForPids(pidFilePath);
         }
-        try {
-            Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
-            for(Future future : futures) {
-                for(int i=0; i<60; i++) {
-                    if(future != null && !future.isDone()) {
-                        logger.info("A future has NOT been done. Wait 5 seconds to shut down the index tool.");
-                        Thread.sleep(5000);
-                    } else {
-                        logger.info("A future has been done. Ignore it before shutting down the index tool.");
-                        break;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println("Finished re-indexing. (" + (new Date()) + ")");
         indexTool.shutdown();
     }
 
     private void updateIndexForPids(String pidFilePath) {
         InputStream pidFileStream = openPidFile(pidFilePath);
         if (pidFileStream != null) {
-            
+            BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
+                    Charset.forName("UTF-8")));
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
-                        Charset.forName("UTF-8")));
-                
                 String line = null;
                 while ((line = br.readLine()) != null) {
                     createIndexTaskForPid(StringUtils.trim(line));
-            }
+                }
                 System.out.println("All tasks generated, now updating index....");
                 processIndexTasks();
                 System.out.println("Index update complete.");
             } catch (IOException e) {
                 System.out.println("Error reading line from pid file");
                 return;
-            } finally {
-                IOUtils.closeQuietly(pidFileStream);
             }
         }
     }
@@ -255,19 +215,11 @@ public class SolrIndexBuildTool {
 
     // if dateParameter is null -- full refresh
     private void generateIndexTasksAndProcess(Date dateParameter, int totalToProcess, int startIndex) {
-        System.out.print("Generating index updates: "+(new Date()));
+        System.out.print("Generating index updates: ");
         int count = 0;
         System.out.println("System Identifiers HzCast structure contains: " + pids.size()
                 + " identifiers.");
-        List<IndexTask> queue = new ArrayList<IndexTask> ();
         for (Identifier smdId : pids) {
-            SystemMetadata smd = systemMetadata.get(smdId);
-            if(!IgnoringIndexIdPool.isNotIgnorePid(smd)) {
-                //we should skip the pid since it is not supposed to be indexed.
-                System.out.println("PID: " + smdId.getValue()
-                        + " was skipped for indexing since it is in the ignoring id pool.");
-                continue;
-            }
             count++;
             if (count < startIndex) {
                 System.out.println("Skipping pid: " + smdId.getValue());
@@ -276,7 +228,7 @@ public class SolrIndexBuildTool {
             if (startIndex > 0) {
                 startIndex = -1;
             }
-            
+            SystemMetadata smd = systemMetadata.get(smdId);
             if (dateParameter == null
                     || dateParameter.compareTo(smd.getDateSysMetadataModified()) <= 0) {
 
@@ -285,18 +237,10 @@ public class SolrIndexBuildTool {
                             + " exists in pids set but cannot be found in system metadata map.");
                 } else {
                     String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-                    //create a task on the memory and doesn't save them into the db
-                    IndexTask task = new IndexTask(smd, objectPath);
-                    task.setAddPriority();
-                    queue.add(task);
-                    //generator.processSystemMetaDataUpdate(smd, objectPath);
-                    
-                    if (count > INDEX_TASK_ONE_CYCLE_SIZE) {
-                        //processIndexTasks();
-                        processor.processIndexTaskQueue(queue);
+                    generator.processSystemMetaDataUpdate(smd, objectPath);
+                    if (count > 1000) {
+                        processIndexTasks();
                         count = 0;
-                        logger.info("SolrINdexBuildTool.generateIndexTasksAndProcess - empty the queue for the next cycle.");
-                        queue = new ArrayList<IndexTask> ();
                     }
                     if (count % 10 == 0) {
                         System.out.print(".");
@@ -308,41 +252,16 @@ public class SolrIndexBuildTool {
                 }
             }
         }
-        //System.out.println("Finished generating index update."+(new Date()));
-        //System.out.println("Processing index task requests.");
+        System.out.println("Finished generating index update.");
+        System.out.println("Processing index task requests.");
         // call processor:
         // it won't be called on last iteration of the for loop if count < 1000
-        //processIndexTasks();
-        processor.processIndexTaskQueue(queue);
-        logger.info("Submitting all new index tasks has completed in the generaterIndexTasksAndProcess");
-        //wait until previous indexing to be finished
-        try {
-            Queue<Future> futures = getIndexTaskProcessor().getFutureQueue();
-            for(Future future : futures) {
-                for(int i=0; i<60; i++) {
-                    if(future != null && !future.isDone()) {
-                        logger.info("A future has NOT been done. Wait 5 seconds for starting to index failed index tasks.");
-                        Thread.sleep(5000);
-                    } else {
-                        logger.info("A future has been done. Ignore it before starting to index failed index tasks.");
-                        break;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        //System.out.println("Finished processing index task requests.");
-        logger.info("All new index tasks have been done in the generaterIndexTasksAndProcess and we will start to index the failured or not-ready index tasks.");
-        //finally we try to process some new or failed index tasks generated in above process again
-        processor.processIndexTaskQueue();
+        processIndexTasks();
+        System.out.println("Finished processing index task requests.");
     }
 
     private void processIndexTasks() {
-        if (BATCH_UPDATE)
-            processor.batchProcessIndexTaskQueue();
-        else
-            processor.processIndexTaskQueue();
+        processor.processIndexTaskQueue();
     }
 
     private String retrieveObjectPath(String pid) {
@@ -420,9 +339,5 @@ public class SolrIndexBuildTool {
             System.out.println("Unable to open file at: " + pidFilePath + ".  Exiting.");
         }
         return pidFileStream;
-    }
-    
-    public IndexTaskProcessor getIndexTaskProcessor() {
-        return processor;
     }
 }
