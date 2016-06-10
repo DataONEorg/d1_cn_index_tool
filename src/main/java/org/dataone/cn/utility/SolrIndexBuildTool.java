@@ -199,10 +199,10 @@ public class SolrIndexBuildTool {
             for(Future future : futures) {
                 for(int i=0; i<60; i++) {
                     if(future != null && !future.isDone()) {
-                        System.out.println("A future has NOT been done. Wait 5 seconds");
+                        logger.info("A future has NOT been done. Wait 5 seconds to shut down the index tool.");
                         Thread.sleep(5000);
                     } else {
-                        System.out.println("A future has been done. Ignore it");
+                        logger.info("A future has been done. Ignore it before shutting down the index tool.");
                         break;
                     }
                 }
@@ -314,16 +314,17 @@ public class SolrIndexBuildTool {
         // it won't be called on last iteration of the for loop if count < 1000
         //processIndexTasks();
         processor.processIndexTaskQueue(queue);
+        logger.info("Submitting all new index tasks has completed in the generaterIndexTasksAndProcess");
         //wait until previous indexing to be finished
         try {
             Queue<Future> futures = getIndexTaskProcessor().getFutureQueue();
             for(Future future : futures) {
                 for(int i=0; i<60; i++) {
                     if(future != null && !future.isDone()) {
-                        System.out.println("A future has NOT been done. Wait 5 seconds");
+                        logger.info("A future has NOT been done. Wait 5 seconds for starting to index failed index tasks.");
                         Thread.sleep(5000);
                     } else {
-                        System.out.println("A future has been done. Ignore it");
+                        logger.info("A future has been done. Ignore it before starting to index failed index tasks.");
                         break;
                     }
                 }
@@ -332,6 +333,7 @@ public class SolrIndexBuildTool {
             e.printStackTrace();
         }
         //System.out.println("Finished processing index task requests.");
+        logger.info("All new index tasks have been done in the generaterIndexTasksAndProcess and we will start to index the failured or not-ready index tasks.");
         //finally we try to process some new or failed index tasks generated in above process again
         processor.processIndexTaskQueue();
     }
