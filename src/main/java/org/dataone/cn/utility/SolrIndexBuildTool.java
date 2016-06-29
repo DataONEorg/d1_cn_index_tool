@@ -339,9 +339,9 @@ public class SolrIndexBuildTool {
     }
 
     private void processIndexTasks() {
-        if (BATCH_UPDATE)
+        /*if (BATCH_UPDATE)
             processor.batchProcessIndexTaskQueue();
-        else
+        else*/
             processor.processIndexTaskQueue();
     }
 
