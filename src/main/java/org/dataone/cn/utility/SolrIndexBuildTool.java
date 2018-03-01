@@ -217,18 +217,45 @@ public class SolrIndexBuildTool {
     private void updateIndexForPids(String pidFilePath) {
         InputStream pidFileStream = openPidFile(pidFilePath);
         if (pidFileStream != null) {
-            
+            List<IndexTask> queue = new ArrayList<IndexTask> ();
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
                         Charset.forName("UTF-8")));
-                
+                int count =0;
                 String line = null;
                 while ((line = br.readLine()) != null) {
-                    createIndexTaskForPid(StringUtils.trim(line));
-            }
-                System.out.println("All tasks generated, now updating index....");
-                processIndexTasks();
-                System.out.println("Index update complete.");
+                    //createIndexTaskForPid(StringUtils.trim(line));
+                    Identifier identifier = new Identifier();
+                    identifier.setValue(line);
+                    SystemMetadata smd = systemMetadata.get(identifier);
+                    if(smd != null) {
+                        String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+                        //create a task on the memory and doesn't save them into the db
+                        if(objectPath != null && !objectPath.trim().equals("")) {
+                            IndexTask task = new IndexTask(smd, objectPath);
+                            task.setAddPriority();
+                            queue.add(task);
+                            count ++;
+                            logger.info("The index task for id: " + line+" has been created and put into the queue.");
+                        } else {
+                            logger.info("=====Unable to find the object path for id: " + line+". So it will be ignored for reindexing.");
+                        }
+                        
+                    } else {
+                        logger.info("=====Unable to get system metadata for id: " + line+". So it will be ignored for reindexing.");
+                    }
+                    if (count > INDEX_TASK_ONE_CYCLE_SIZE) {
+                        processor.processIndexTaskQueue(queue);
+                        count = 0;
+                        logger.info("SolrINdexBuildTool.updateIndexForPids - empty the queue for the next cycle.");
+                        queue = new ArrayList<IndexTask> ();
+                    }
+                    
+                }
+                //System.out.println("All tasks generated, now updating index....");
+                //processIndexTasks();
+                processor.processIndexTaskQueue(queue);
+                logger.info("All index tasks have been submitted to the processor.");
             } catch (IOException e) {
                 System.out.println("Error reading line from pid file");
                 return;
@@ -338,12 +365,12 @@ public class SolrIndexBuildTool {
         processor.processIndexTaskQueue();
     }
 
-    private void processIndexTasks() {
+    //private void processIndexTasks() {
         /*if (BATCH_UPDATE)
             processor.batchProcessIndexTaskQueue();
         else*/
-            processor.processIndexTaskQueue();
-    }
+            //processor.processIndexTaskQueue();
+    //}
 
     private String retrieveObjectPath(String pid) {
         Identifier PID = new Identifier();
