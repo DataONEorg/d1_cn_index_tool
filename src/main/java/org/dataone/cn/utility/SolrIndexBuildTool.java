@@ -231,15 +231,15 @@ public class SolrIndexBuildTool {
                     if(smd != null) {
                         String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
                         //create a task on the memory and doesn't save them into the db
-                        if(objectPath != null && !objectPath.trim().equals("")) {
+                        //if(objectPath != null && !objectPath.trim().equals("")) {
                             IndexTask task = new IndexTask(smd, objectPath);
                             task.setAddPriority();
                             queue.add(task);
                             count ++;
                             logger.info("The index task for id: " + line+" has been created and put into the queue.");
-                        } else {
-                            logger.info("=====Unable to find the object path for id: " + line+". So it will be ignored for reindexing.");
-                        }
+                        //} else {
+                            //logger.info("=====Unable to find the object path for id: " + line+". So it will be ignored for reindexing.");
+                        //}
                         
                     } else {
                         logger.info("=====Unable to get system metadata for id: " + line+". So it will be ignored for reindexing.");
