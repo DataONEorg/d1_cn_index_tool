@@ -6,14 +6,14 @@
   <version>2.4.0-SNAPSHOT</version>
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <compiler.target.version>1.7</compiler.target.version>
+        <compiler.target.version>1.8</compiler.target.version>
   		<d1_common_java.version>2.4.0-SNAPSHOT</d1_common_java.version>
   		<d1_libclient_java.version>2.4.0-SNAPSHOT</d1_libclient_java.version>
   		<d1_cn_common.version>2.4.0-SNAPSHOT</d1_cn_common.version>
   		<d1_cn_index_common.version>2.4.0-SNAPSHOT</d1_cn_index_common.version>
   		<d1_cn_index_generator.version>2.4.0-SNAPSHOT</d1_cn_index_generator.version>
   		<d1_cn_index_processor.version>2.4.0-SNAPSHOT</d1_cn_index_processor.version>
-  		<spring.version>3.1.4.RELEASE</spring.version>
+  		<spring.version>4.3.8.RELEASE</spring.version>
   		<hazelcast.version>2.4.1</hazelcast.version>
 	</properties>
   
@@ -65,16 +65,7 @@
             <artifactId>hazelcast-spring</artifactId>
             <version>${hazelcast.version}</version>
             <scope>compile</scope>
-        </dependency>
-		
-        <dependency>
-            <groupId>org.jibx</groupId>
-            <artifactId>jibx-run</artifactId>
-            <version>1.2.4.5</version>
-            <optional>false</optional>
-            <scope>compile</scope>
-        </dependency>
-		
+        </dependency>		
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
@@ -179,7 +170,7 @@
 		<dependency>
 		    <groupId>junit</groupId>
 		    <artifactId>junit</artifactId>
-		    <version>4.10</version>
+		    <version>4.12</version>
 		    <scope>test</scope>
 		</dependency>
   </dependencies>
