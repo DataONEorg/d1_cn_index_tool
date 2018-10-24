@@ -225,7 +225,7 @@ public class SolrIndexBuildTool {
             indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
         } else if (getAllCount) {
             System.out.println("There is a total of " + indexTool.pids.size());
-            
+            return;
         } else {
             indexTool.updateIndexForPids(pidFilePath);
         }
