@@ -91,6 +91,8 @@ public class SolrIndexBuildTool {
     private IndexTaskProcessor processor;
 
     private boolean buildNextIndex = false;
+    private static boolean generateOnly = false;
+    private static boolean getAllCount = false;
 
     public SolrIndexBuildTool() {
     }
@@ -100,74 +102,95 @@ public class SolrIndexBuildTool {
         Date dateParameter = null;
         String dateString = null;
         boolean help = false;
-        boolean fullRefresh = false;
+        boolean all = false;
         boolean migrate = false;
+        
         String pidFile = null;
         int totalToProcess = 0;
         int startIndex = 0;
         int options = 0;
+        int modeOptions = 0;
         for (String arg : args) {
-            if (StringUtils.startsWith(arg, "-d")) {
-                dateString = StringUtils.substringAfter(arg, "-d");
+            if (StringUtils.startsWith(arg, "-date=")) {
+                dateString = StringUtils.substringAfter(arg, "-date=");
                 dateString = StringUtils.trim(dateString);
                 try {
                     dateParameter = dateFormat.parse(dateString);
                     options++;
+                    modeOptions++;
                 } catch (ParseException e) {
                     System.out.println("Unable to parse provided date string: " + dateString);
                 }
             } else if (StringUtils.startsWith(arg, "-help")) {
                 help = true;
-            } else if (StringUtils.startsWith(arg, "-a")) {
-                fullRefresh = true;
+            } else if (StringUtils.startsWith(arg, "-all")) {
+                all = true;
                 options++;
+                modeOptions++;
+            } else if (StringUtils.startsWith(arg, "-getCount")) {
+                getAllCount = true;
+                options++;
+                modeOptions++;
             } else if (StringUtils.startsWith(arg, "-migrate")) {
                 migrate = true;
-            } else if (StringUtils.startsWith(arg, "-pidFile")) {
-                pidFile = StringUtils.trim(StringUtils.substringAfter(arg, "-pidFile"));
+            } else if (StringUtils.startsWith(arg, "-pidFile=")) {
+                pidFile = StringUtils.trim(StringUtils.substringAfter(arg, "-pidFile="));
                 options++;
-            } else if (StringUtils.startsWith(arg, "-startAt")) {
+                modeOptions++;
+            } else if (StringUtils.startsWith(arg, "-startAt=")) {
                 options++;
-                String startAt = StringUtils.trim(StringUtils.substringAfter(arg, "-startAt"));
+                String startAt = StringUtils.trim(StringUtils.substringAfter(arg, "-startAt="));
                 startIndex = Integer.valueOf(startAt).intValue();
-            } else if (StringUtils.startsWith(arg, "-c")) {
-                String countStr = StringUtils.trim(StringUtils.substringAfter(arg, "-c"));
+            } else if (StringUtils.startsWith(arg, "-count=")) {
+                String countStr = StringUtils.trim(StringUtils.substringAfter(arg, "-count="));
                 totalToProcess = Integer.valueOf(countStr).intValue();
+                options++;
+            } else if (StringUtils.startsWith(arg, "-generateOnly")) {
+                generateOnly = true;
                 options++;
             }
         }
 
-        if (help
-                || (fullRefresh == false && dateParameter == null && pidFile == null && startIndex == 0)) {
+        if (help) {
             showHelp();
             return;
         }
-        if (options > 1) {
+        if (modeOptions != 1) {
             System.out
-                    .println("Only one option amoung -a, -d, -c, -pidFile, -startAt may be used at a time.");
+                    .println("Exactly one option amoung -all, -date, -pidFile, -startAt may be used at a time.");
             showHelp();
             return;
-        } else if (options == 0) {
-            System.out
-                    .println("At least one option amoung -a, -d, -c, -pidFile, -startAt must be specified.");
-        }
-
-        if (fullRefresh) {
+        } 
+        if (all) {
             System.out.println("Performing full build/refresh of solr index.");
-        } else if (dateParameter != null) {
-            System.out.println("Performing (re)build from date: "
-                    + dateFormat.format(dateParameter) + ".");
-        } else if (pidFile != null) {
+        } 
+        else if (dateParameter != null) {
+            System.out.println("Performing (re)build from date: " + dateFormat.format(dateParameter) + ".");
+        } 
+        else if (pidFile != null) {
             System.out.println("Performing refresh/index for pids found in file: " + pidFile);
+        }
+        else if (startIndex > 0) {
+            System.out.println("Performing index/refresh from hazelcast Identifier set index: "+ startIndex);
         }
 
         if (migrate) {
-            System.out
-                    .println("Performing refresh/build against the next version of search index.");
+            System.out.println("Refreash targeting the next version of the search index");
         } else {
-            System.out.println("Performing refresh/build against live search index.");
+            System.out.println("Refresh targeting the current live search index.");
         }
-
+        
+        if (totalToProcess > 0) {
+            System.out.println("Limiting refresh to " + totalToProcess + " items.");
+        }
+        
+        if (generateOnly) {
+            System.out.println("Adding tasks to the index task queue. Tasks will be processed when index task processor is started up");
+        }
+        
+        
+        
+        System.out.println(" ");
         System.out.println("Starting solr index refresh.");
 
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
@@ -182,6 +205,15 @@ public class SolrIndexBuildTool {
         System.out.println("Exiting solr index refresh tool.");
     }
 
+    /**
+     * The main processing routine
+     * 
+     * @param indexTool
+     * @param dateParameter
+     * @param pidFilePath
+     * @param totalToProcess
+     * @param startIndex
+     */
     private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date dateParameter,
             String pidFilePath, int totalToProcess, int startIndex) {
         indexTool.configureContext();
@@ -191,6 +223,9 @@ public class SolrIndexBuildTool {
         
         if (pidFilePath == null) {
             indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
+        } else if (getAllCount) {
+            System.out.println("There is a total of " + indexTool.pids.size());
+            
         } else {
             indexTool.updateIndexForPids(pidFilePath);
         }
@@ -217,15 +252,15 @@ public class SolrIndexBuildTool {
     private void updateIndexForPids(String pidFilePath) {
         InputStream pidFileStream = openPidFile(pidFilePath);
         if (pidFileStream != null) {
-            
+
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
                         Charset.forName("UTF-8")));
-                
+
                 String line = null;
                 while ((line = br.readLine()) != null) {
                     createIndexTaskForPid(StringUtils.trim(line));
-            }
+                }
                 System.out.println("All tasks generated, now updating index....");
                 processIndexTasks();
                 System.out.println("Index update complete.");
@@ -384,28 +419,31 @@ public class SolrIndexBuildTool {
         System.out.println("And restart whent the tool finishes:");
         System.out.println("       /etc/init.d/d1-index-task-processor start");
         System.out.println(" ");
-        System.out.println("-d     System data modified date to begin index build/refresh from.");
-        System.out.println("       Data objects modified/added after this date will be indexed.");
-        System.out.println("       Date format: mm/dd/yyyy.");
+        System.out.println("-date=     System data modified date to begin index build/refresh from.");
+        System.out.println("             Data objects modified/added after this date will be indexed.");
+        System.out.println("             Date format: mm/dd/yyyy.");
         System.out.println(" ");
-        System.out.println("-a     Build/refresh all data objects regardless of modified date.");
+        System.out.println("-all       Build/refresh all data objects regardless of modified date.");
         System.out.println(" ");
-        System.out
-                .println("-c     Build/refresh a number data objects, the number configured by this option.");
-        System.out.println("        This option is primarily intended for testing purposes.");
+        System.out.println("-startAt=  Build/refresh objects, starting at this index in the hazelcast Identifiers Set.");
         System.out.println(" ");
-        System.out
-                .println("-startAt  Build/refresh objects, starting at this index in the hazelcast Identifiers Set.");
-        System.out.println(" ");
-        System.out
-                .println("-pidFile   Refresh index document for pids contained in the file path ");
-        System.out
-                .println("           supplied with this option.  File should contain one pid per line.");
+        System.out.println("-pidFile=  Refresh index document for pids contained in the file path ");
+        System.out.println("             supplied with this option.  File should contain one pid per line.");
         System.out.println(" ");
         System.out.println("-migrate   Build/refresh data object into the next search index");
         System.out.println("             version's core - as configured in: ");
         System.out.println("              /etc/dataone/solr-next.properties");
-        System.out.println("Exactly one option amoung -d or -a or -pidFile must be specified.");
+        System.out.println(" ");
+        System.out.println("-count=    Build/refresh a number data objects, the number configured by this option.");
+        System.out.println("             This option is primarily intended for testing purposes.");
+        System.out.println(" ");
+        System.out.println("-generateOnly   Don't process tasks, just put them into Index Task Queue");
+        System.out.println(" ");
+        System.out.println("-getCount       Only get a count of how many the -all option will process");
+        System.out.println(" ");
+        
+        
+        System.out.println("Exactly one option among -date, -all, -pidFile, or -startAt must be specified.");
     }
 
     private void setBuildNextIndex(boolean next) {

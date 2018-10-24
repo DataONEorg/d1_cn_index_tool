@@ -101,7 +101,7 @@ public class SolrIndexBuildToolTest {
         addSystemMetadata(systemMetadataResource5);
 
         try {
-            SolrIndexBuildTool.main(new String[] { "-a" });
+            SolrIndexBuildTool.main(new String[] { "-all" });
         } catch (Exception e) {
             e.printStackTrace();
             Assert.assertFalse(true);
