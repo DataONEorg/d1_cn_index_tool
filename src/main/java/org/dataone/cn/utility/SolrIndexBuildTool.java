@@ -219,38 +219,42 @@ public class SolrIndexBuildTool {
     private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date dateParameter,
             String pidFilePath, int totalToProcess, int startIndex) {
         indexTool.configureContext();
-        indexTool.configureHazelcast();
-
+        
         System.out.println("Starting work... (" + (new Date()) + ")");
         
-        if (getAllCount) {
-            System.out.println("There is a total of " + indexTool.pids.size());
-            return;
-        } 
-        else if (pidFilePath == null) {
-            indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
-        } 
-        else {
-            indexTool.updateIndexForPids(pidFilePath);
-        }
         try {
-            Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
-            for(Future future : futures) {
-                for(int i=0; i<60; i++) {
-                    if(future != null && !future.isDone()) {
-                        logger.info("A future has NOT been done. Wait 5 seconds to shut down the index tool.");
-                        Thread.sleep(5000);
-                    } else {
-                        logger.info("A future has been done. Ignore it before shutting down the index tool.");
-                        break;
+            indexTool.configureHazelcast();
+            
+            if (getAllCount) {
+                System.out.println("There is a total of " + indexTool.pids.size());
+                return;
+            } 
+            else if (pidFilePath == null) {
+                indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
+            } 
+            else {
+                indexTool.updateIndexForPids(pidFilePath);
+            }
+            try {
+                Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
+                for(Future future : futures) {
+                    for(int i=0; i<60; i++) {
+                        if(future != null && !future.isDone()) {
+                            logger.info("A future has NOT been done. Wait 5 seconds to shut down the index tool.");
+                            Thread.sleep(5000);
+                        } else {
+                            logger.info("A future has been done. Ignore it before shutting down the index tool.");
+                            break;
+                        }
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Finished re-indexing. (" + (new Date()) + ")");
+        } finally {
+            indexTool.shutdown();
         }
-        System.out.println("Finished re-indexing. (" + (new Date()) + ")");
-        indexTool.shutdown();
     }
 
     private void updateIndexForPids(String pidFilePath) {
