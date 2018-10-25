@@ -228,25 +228,28 @@ public class SolrIndexBuildTool {
             String pidFilePath, int totalToProcess, int startIndex) {
         indexTool.configureContext();
         
-        System.out.println("Starting work... (" + (new Date()) + ")");
+        System.err.println("Starting work... (" + (new Date()) + ")");
         
         try {
             indexTool.configureHazelcast();
             
             if (getAllCount) {
-                System.out.println("There is a total of " + indexTool.pids.size());
+                System.out.println("There is a pid total of " + indexTool.pids.size());
                 return;
             } 
             else if (createPidList) {
+                System.err.println("Listing Pids (from Hazelcast Identifiers set)");
                 for (Identifier pid : indexTool.pids) {
                     System.out.println(pid.getValue());
                 }
                 return;
             }
             else if (pidFilePath == null) {
+                System.err.println("Reindexing all with date and index filters");
                 indexTool.generateIndexTasksAndProcess(fromDate, totalToProcess, startIndex);
             } 
             else {
+                System.err.println("Reindexing from pidFile");
                 indexTool.updateIndexForPids(pidFilePath);
             }
             try {
@@ -317,7 +320,7 @@ public class SolrIndexBuildTool {
     }
 
     private void generateIndexTasksAndProcess(Date fromDate, int totalToProcess, int startIndex) {
-        System.out.print("Generating index updates: "+(new Date()));
+        System.out.println("Generating index updates: "+(new Date()));
         int count = 0;
         System.out.println("System Identifiers HzCast structure contains: " + pids.size()
                 + " identifiers.");
@@ -364,7 +367,7 @@ public class SolrIndexBuildTool {
                         System.out.print(".");
                     }
                     if (totalToProcess > 0 && count >= totalToProcess) {
-                        System.out.print("Total to process reached. Exiting after processing.");
+                        System.out.println("Total to process reached. Exiting after processing.");
                         break;
                     }
                 }
