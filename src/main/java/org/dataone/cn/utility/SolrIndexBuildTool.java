@@ -164,6 +164,9 @@ public class SolrIndexBuildTool {
         if (all) {
             System.out.println("Performing full build/refresh of solr index.");
         } 
+        else if (getAllCount) {
+            System.out.println("Getting count of all objects");
+        }
         else if (dateParameter != null) {
             System.out.println("Performing (re)build from date: " + dateFormat.format(dateParameter) + ".");
         } 
@@ -191,7 +194,6 @@ public class SolrIndexBuildTool {
         
         
         System.out.println(" ");
-        System.out.println("Starting solr index refresh.");
 
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
         indexTool.setBuildNextIndex(migrate);
@@ -219,14 +221,16 @@ public class SolrIndexBuildTool {
         indexTool.configureContext();
         indexTool.configureHazelcast();
 
-        System.out.println("Starting re-indexing... (" + (new Date()) + ")");
+        System.out.println("Starting work... (" + (new Date()) + ")");
         
-        if (pidFilePath == null) {
-            indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
-        } else if (getAllCount) {
+        if (getAllCount) {
             System.out.println("There is a total of " + indexTool.pids.size());
             return;
-        } else {
+        } 
+        else if (pidFilePath == null) {
+            indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
+        } 
+        else {
             indexTool.updateIndexForPids(pidFilePath);
         }
         try {
