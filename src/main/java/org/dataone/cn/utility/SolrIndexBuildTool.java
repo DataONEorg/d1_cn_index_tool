@@ -93,13 +93,14 @@ public class SolrIndexBuildTool {
     private boolean buildNextIndex = false;
     private static boolean generateOnly = false;
     private static boolean getAllCount = false;
+    private static boolean createPidList = false;
 
     public SolrIndexBuildTool() {
     }
 
     public static void main(String[] args) {
         DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
-        Date dateParameter = null;
+        Date startDate = null;
         String dateString = null;
         boolean help = false;
         boolean all = false;
@@ -115,7 +116,7 @@ public class SolrIndexBuildTool {
                 dateString = StringUtils.substringAfter(arg, "-date=");
                 dateString = StringUtils.trim(dateString);
                 try {
-                    dateParameter = dateFormat.parse(dateString);
+                    startDate = dateFormat.parse(dateString);
                     options++;
                     modeOptions++;
                 } catch (ParseException e) {
@@ -148,6 +149,10 @@ public class SolrIndexBuildTool {
             } else if (StringUtils.startsWith(arg, "-generateOnly")) {
                 generateOnly = true;
                 options++;
+            } else if (StringUtils.startsWith(arg, "-listPids")) {
+                createPidList = true;
+                options++;
+                modeOptions++;
             }
         }
 
@@ -167,8 +172,11 @@ public class SolrIndexBuildTool {
         else if (getAllCount) {
             System.out.println("Getting count of all objects");
         }
-        else if (dateParameter != null) {
-            System.out.println("Performing (re)build from date: " + dateFormat.format(dateParameter) + ".");
+        else if (createPidList) {
+            System.out.println("PidList");
+        }
+        else if (startDate != null) {
+            System.out.println("Performing (re)build from date: " + dateFormat.format(startDate) + ".");
         } 
         else if (pidFile != null) {
             System.out.println("Performing refresh/index for pids found in file: " + pidFile);
@@ -198,7 +206,7 @@ public class SolrIndexBuildTool {
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
         indexTool.setBuildNextIndex(migrate);
         try {
-            refreshSolrIndex(indexTool, dateParameter, pidFile, totalToProcess, startIndex);
+            refreshSolrIndex(indexTool, startDate, pidFile, totalToProcess, startIndex);
         } catch (Exception e) {
             System.out.println("Solr index refresh failed: " + e.getMessage());
             e.printStackTrace(System.out);
@@ -216,7 +224,7 @@ public class SolrIndexBuildTool {
      * @param totalToProcess
      * @param startIndex
      */
-    private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date dateParameter,
+    private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date fromDate,
             String pidFilePath, int totalToProcess, int startIndex) {
         indexTool.configureContext();
         
@@ -229,8 +237,14 @@ public class SolrIndexBuildTool {
                 System.out.println("There is a total of " + indexTool.pids.size());
                 return;
             } 
+            else if (createPidList) {
+                for (Identifier pid : indexTool.pids) {
+                    System.out.println(pid.getValue());
+                }
+                return;
+            }
             else if (pidFilePath == null) {
-                indexTool.generateIndexTasksAndProcess(dateParameter, totalToProcess, startIndex);
+                indexTool.generateIndexTasksAndProcess(fromDate, totalToProcess, startIndex);
             } 
             else {
                 indexTool.updateIndexForPids(pidFilePath);
@@ -269,9 +283,15 @@ public class SolrIndexBuildTool {
                 while ((line = br.readLine()) != null) {
                     createIndexTaskForPid(StringUtils.trim(line));
                 }
-                System.out.println("All tasks generated, now updating index....");
-                processIndexTasks();
-                System.out.println("Index update complete.");
+                System.out.println("All tasks generated...");
+                
+                if (generateOnly) {
+                    System.out.println("Generate-Only argument set, so skipping processing.");
+                    System.out.println("Restart d1-index-processor to process");
+                } else {
+                    processIndexTasks();
+                    System.out.println("Index update complete.");
+                } 
             } catch (IOException e) {
                 System.out.println("Error reading line from pid file");
                 return;
@@ -296,8 +316,7 @@ public class SolrIndexBuildTool {
         }
     }
 
-    // if dateParameter is null -- full refresh
-    private void generateIndexTasksAndProcess(Date dateParameter, int totalToProcess, int startIndex) {
+    private void generateIndexTasksAndProcess(Date fromDate, int totalToProcess, int startIndex) {
         System.out.print("Generating index updates: "+(new Date()));
         int count = 0;
         System.out.println("System Identifiers HzCast structure contains: " + pids.size()
@@ -320,8 +339,8 @@ public class SolrIndexBuildTool {
                 startIndex = -1;
             }
             
-            if (dateParameter == null
-                    || dateParameter.compareTo(smd.getDateSysMetadataModified()) <= 0) {
+            if (fromDate == null
+                    || fromDate.compareTo(smd.getDateSysMetadataModified()) <= 0) {
 
                 if (smd == null || smd.getIdentifier() == null) {
                     System.out.println("PID: " + smdId.getValue()
@@ -448,6 +467,8 @@ public class SolrIndexBuildTool {
         System.out.println("-generateOnly   Don't process tasks, just put them into Index Task Queue");
         System.out.println(" ");
         System.out.println("-getCount       Only get a count of how many the -all option will process");
+        System.out.println(" ");
+        System.out.println("-listPids       Output a list of all pids");
         System.out.println(" ");
         
         
