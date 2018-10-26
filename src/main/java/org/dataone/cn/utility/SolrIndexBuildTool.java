@@ -213,6 +213,7 @@ public class SolrIndexBuildTool {
         }
 
         System.out.println("Exiting solr index refresh tool.");
+        System.exit(0);
     }
 
     /**
@@ -254,22 +255,31 @@ public class SolrIndexBuildTool {
             }
             try {
                 Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
-                for(Future future : futures) {
-                    for(int i=0; i<60; i++) {
-                        if(future != null && !future.isDone()) {
-                            logger.info("A future has NOT been done. Wait 5 seconds to shut down the index tool.");
-                            Thread.sleep(5000);
-                        } else {
-                            logger.info("A future has been done. Ignore it before shutting down the index tool.");
-                            break;
+                if (futures != null && futures.size() > 0) {
+                    for(Future future : futures) {
+                        for(int i=0; i<60; i++) {
+                            if(future != null && !future.isDone()) {
+                                logger.info("A future has NOT been done. Wait 5 seconds to shut down the index tool.");
+                                Thread.sleep(5000);
+                            } else {
+                                logger.info("A future has been done. Ignore it before shutting down the index tool.");
+                                break;
+                            }
                         }
                     }
                 }
+                indexTool.getIndexTaskProcessor().shutdownExecutor();
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+
             }
-            System.out.println("Finished re-indexing. (" + (new Date()) + ")");
+
         } finally {
+            logger.warn("Shutting down index task processor executor...");
+            indexTool.getIndexTaskProcessor().shutdownExecutor();
+            logger.warn("Finishing work... (" + (new Date()) + ")");
+            System.out.println("Finishing work... (" + (new Date()) + ")");
             indexTool.shutdown();
         }
     }
@@ -299,6 +309,7 @@ public class SolrIndexBuildTool {
                 System.out.println("Error reading line from pid file");
                 return;
             } finally {
+                
                 IOUtils.closeQuietly(pidFileStream);
             }
         }
@@ -435,7 +446,13 @@ public class SolrIndexBuildTool {
     }
 
     private void shutdown() {
-        hzClient.shutdown();
+        
+        if (hzClient != null) {
+            logger.warn("Shutting down HZ client...");
+            hzClient.shutdown();
+        } else {
+            logger.warn("(No HZ client to shutdown)");
+        }
     }
 
     private static void showHelp() {
