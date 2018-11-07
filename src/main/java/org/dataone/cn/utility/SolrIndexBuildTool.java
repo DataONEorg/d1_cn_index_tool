@@ -91,7 +91,8 @@ public class SolrIndexBuildTool {
     private IndexTaskProcessor processor;
 
     private boolean buildNextIndex = false;
-    private static boolean generateOnly = false;
+    private static boolean skipProcessing = false;
+    private static boolean skipGenerating = false;
     private static boolean getAllCount = false;
     private static boolean createPidList = false;
 
@@ -146,8 +147,11 @@ public class SolrIndexBuildTool {
                 String countStr = StringUtils.trim(StringUtils.substringAfter(arg, "-count="));
                 totalToProcess = Integer.valueOf(countStr).intValue();
                 options++;
-            } else if (StringUtils.startsWith(arg, "-generateOnly")) {
-                generateOnly = true;
+            } else if (StringUtils.startsWith(arg, "-skipProcessing")) {
+                skipProcessing = true;
+                options++;
+            } else if (StringUtils.startsWith(arg, "-skipGenerating")) {
+                skipGenerating = true;
                 options++;
             } else if (StringUtils.startsWith(arg, "-listPids")) {
                 createPidList = true;
@@ -195,8 +199,12 @@ public class SolrIndexBuildTool {
             System.out.println("Limiting refresh to " + totalToProcess + " items.");
         }
         
-        if (generateOnly) {
-            System.out.println("Adding tasks to the index task queue. Tasks will be processed when index task processor is started up");
+        if (skipProcessing) {
+            System.out.println("skipProcessing flag is set...Tasks will be processed when index task processor " +
+            		"is started up or a future run without this flag");
+        }
+        if (skipGenerating) {
+            System.out.println("skipGenerating flag is set...Only existing tasks will be processed");
         }
         
         
@@ -285,36 +293,48 @@ public class SolrIndexBuildTool {
     }
 
     private void updateIndexForPids(String pidFilePath) {
-        InputStream pidFileStream = openPidFile(pidFilePath);
-        if (pidFileStream != null) {
-
-            try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream,
-                        Charset.forName("UTF-8")));
-
+        
+        
+        ////// GENERATE .....
+        
+        InputStream pidFileStream = null;
+        try {
+            if (skipGenerating) {
+                System.out.println("Skipping task generation, as per -skipGenerating argument.");
+            } else {
+                pidFileStream = new FileInputStream(pidFilePath);
+                BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream, Charset.forName("UTF-8")));
+            
+                System.out.println("Generating tasks from pid list...");
                 String line = null;
                 while ((line = br.readLine()) != null) {
                     createIndexTaskForPid(StringUtils.trim(line));
                 }
                 System.out.println("All tasks generated...");
-                
-                if (generateOnly) {
-                    System.out.println("Generate-Only argument set, so skipping processing.");
-                    System.out.println("Restart d1-index-processor to process");
-                } else {
-                    processIndexTasks();
-                    System.out.println("Index update complete.");
-                } 
-            } catch (IOException e) {
-                System.out.println("Error reading line from pid file");
-                return;
-            } finally {
-                
-                IOUtils.closeQuietly(pidFileStream);
             }
+                
+        } catch (IOException e) {
+            System.out.println("Error reading line from pid file");
+            return;
+        } finally {
+            IOUtils.closeQuietly(pidFileStream);
         }
+
+        
+        ////// PROCESS .....
+        
+        if (skipProcessing) {
+            System.out.println("Skipping processing, as per -skipProcessing argument.");
+        } else {
+            System.out.println("Starting index processor...");
+            processIndexTasks();
+            System.out.println("Index processor execution complete...");
+        } 
     }
 
+    
+    
+    
     private void createIndexTaskForPid(String pid) {
         if (StringUtils.isNotEmpty(pid)) {
             Identifier identifier = new Identifier();
@@ -484,7 +504,9 @@ public class SolrIndexBuildTool {
         System.out.println("-count=    Build/refresh a number data objects, the number configured by this option.");
         System.out.println("             This option is primarily intended for testing purposes.");
         System.out.println(" ");
-        System.out.println("-generateOnly   Don't process tasks, just put them into Index Task Queue");
+        System.out.println("-skipProcessing   Don't process tasks");
+        System.out.println(" ");
+        System.out.println("-skipGenerating   Don't generate new tasks");
         System.out.println(" ");
         System.out.println("-getCount       Only get a count of how many the -all option will process");
         System.out.println(" ");
