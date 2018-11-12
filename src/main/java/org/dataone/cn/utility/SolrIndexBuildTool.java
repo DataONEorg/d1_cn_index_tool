@@ -34,7 +34,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -239,51 +242,73 @@ public class SolrIndexBuildTool {
         
         System.err.println("Starting work... (" + (new Date()) + ")");
         
-        try {
-            indexTool.configureHazelcast();
-            
-            if (getAllCount) {
-                System.out.println("There is a pid total of " + indexTool.pids.size());
-                return;
-            } 
-            else if (createPidList) {
-                System.err.println("Listing Pids (from Hazelcast Identifiers set)");
-                for (Identifier pid : indexTool.pids) {
-                    System.out.println(pid.getValue());
-                }
-                return;
+    
+        indexTool.configureHazelcast();
+
+        if (getAllCount) {
+            System.out.println("There is a pid total of " + indexTool.pids.size());
+            return;
+        } 
+        else if (createPidList) {
+            System.err.println("Listing Pids (from Hazelcast Identifiers set)");
+            for (Identifier pid : indexTool.pids) {
+                System.out.println(pid.getValue());
             }
-            else if (pidFilePath == null) {
-                System.err.println("Reindexing all with date and index filters");
+            return;
+        }
+
+        try {
+
+            ///// PROCESS FROM EITHER FILE OR HZ.IDENTIFIERS
+
+            if (pidFilePath == null) {
+                System.err.println("Reindexing all from HZ.identifiers map, using date and index filters");
                 indexTool.generateIndexTasksAndProcess(fromDate, totalToProcess, startIndex);
             } 
             else {
                 System.err.println("Reindexing from pidFile");
                 indexTool.updateIndexForPids(pidFilePath);
             }
-            try {
-                Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
-                if (futures != null && futures.size() > 0) {
+
+
+            ////  WAIT FOR TASKS TO COMPLETE 
+            ////      examine the futures to help not wait too long
+
+            Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
+
+            System.out.println(futures.size() + " futures found in the indexProcessorFutureQueue.");
+            if (futures.size() > 0) {
+                int totalTimeout = 2 * futures.size() * 2000; 
+                System.out.println("... waiting maximum of " + totalTimeout + "ms to finish (2s per future...");
+
+                long start = System.currentTimeMillis();
+                Set<Future> doneFutures = new HashSet<>();
+                while (System.currentTimeMillis() < start + totalTimeout * 1000) {
+
                     for(Future future : futures) {
-                        for(int i=0; i<60; i++) {
-                            if(future != null && !future.isDone()) {
-                                logger.info("A future has NOT been done. Wait 5 seconds to shut down the index tool.");
-                                Thread.sleep(5000);
-                            } else {
-                                logger.info("A future has been done. Ignore it before shutting down the index tool.");
-                                break;
-                            }
+
+                        if (!doneFutures.contains(future) && future.isDone()) {
+                            doneFutures.add(future);
                         }
                     }
+
+                    if (doneFutures.size() == futures.size())
+                        break;
+
+                    Thread.sleep(2000);
+                    System.out.println("Total of " + doneFutures.size() + " futures of " + futures.size() + " are done.");
                 }
-                indexTool.getIndexTaskProcessor().shutdownExecutor();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
+                if (doneFutures.size() < futures.size()) {
+                    System.out.println("Not all futures completed before timing out. There are " + (futures.size() - doneFutures.size())
+                            + " not done.");
+                }
 
             }
 
-        } finally {
+        } catch (Exception e) {
+            e.printStackTrace();
+        } 
+        finally {
             logger.warn("Shutting down index task processor executor...");
             indexTool.getIndexTaskProcessor().shutdownExecutor();
             logger.warn("Finishing work... (" + (new Date()) + ")");
@@ -291,6 +316,9 @@ public class SolrIndexBuildTool {
             indexTool.shutdown();
         }
     }
+
+
+
 
     private void updateIndexForPids(String pidFilePath) {
         
