@@ -33,16 +33,21 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -53,12 +58,15 @@ import org.dataone.cn.index.task.IgnoringIndexIdPool;
 import org.dataone.cn.index.task.IndexTask;
 import org.dataone.configuration.Settings;
 import org.dataone.service.types.v1.Identifier;
+import org.dataone.service.types.v1.TypeFactory;
 import org.dataone.service.types.v2.SystemMetadata;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.IMap;
+
+import static java.util.stream.Collectors.toCollection;
 
 public class SolrIndexBuildTool {
     private static Logger logger = Logger.getLogger(SolrIndexBuildTool.class.getName());
@@ -94,187 +102,236 @@ public class SolrIndexBuildTool {
     private IndexTaskProcessor processor;
 
     private boolean buildNextIndex = false;
-    private static boolean skipProcessing = false;
-    private static boolean skipGenerating = false;
-    private static boolean getAllCount = false;
-    private static boolean createPidList = false;
 
     public SolrIndexBuildTool() {
     }
 
     public static void main(String[] args) {
+ 
+        // try and run before shutdown
+//        Runtime.getRuntime().addShutdownHook(new Thread() {
+//            public void run() {
+//                System.out.println("Shutdown Hook is running");
+//            }
+//        });
+        
+        
+     // create Options object
+        Options options = new Options();
+        options.addOption("help", false, "print this message");
+
+        options.addOption("getCount", false, "print this message");
+        options.addOption("listPids", false, "Output a list of all pids");
+        options.addOption("all", false, "reindex from HZ identifiers set from the object store");        
+        options.addOption("pidFile", true, "Refresh index document for pids contained in the file " +
+        		"path supplied with this option.  File should contain one pid per line.");
+
+        options.addOption("date", true, "System data modified date to begin index build/refresh from. Format: mm/dd/yyyy");
+        options.addOption("startAt", true, "index in the list to start processing at");
+        options.addOption("count", true, "the number of items to process");
+
+        options.addOption("useIndexQueue", false, "use the persistent index task queue to process from.  this simulates normal workflow");
+        options.addOption("generateOnly", false, "Don't process any tasks, just submit to the persistent index task queue.");
+        options.addOption("processOnly", false, "Don't generate new tasks");
+        options.addOption("migrate", false, "Build/refresh data object into the next search index version's core " +
+        		"- as configured in: /etc/dataone/solr-next.properties");
+        
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            // parse the command line arguments
+            cmd = parser.parse( options, args );
+        } catch (org.apache.commons.cli.ParseException e) {
+         // oops, something went wrong
+            System.err.println( "Parsing failed.  Reason: " + e.getMessage() );
+        } 
+        
+        HelpFormatter formatter = new HelpFormatter();
+        if (cmd.hasOption("help")) {
+            // automatically generate the help statement
+             formatter.printHelp( "index build tool", options );
+            return;
+        }
+        
+       
+        String[] exclusiveOptions = new String[]{"all","pidList","getCount","listPids"};
+        int excl = 0;
+        for (int i=0; i<exclusiveOptions.length; i++) {
+            if (cmd.hasOption(exclusiveOptions[i])) 
+                excl++;
+        }
+        if (excl > 1) {
+            System.err.println("Only one of -all, -pidFile, -getCount, or -listPids can be used!!");
+            // automatically generate the help statement
+            formatter.printHelp( "index build tool", options );
+            return;
+        }
+        
+        
+        // validate Date value
         DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
         Date startDate = null;
         String dateString = null;
-        boolean help = false;
-        boolean all = false;
-        boolean migrate = false;
-        
-        String pidFile = null;
-        int totalToProcess = 0;
-        int startIndex = 0;
-        int options = 0;
-        int modeOptions = 0;
-        for (String arg : args) {
-            if (StringUtils.startsWith(arg, "-date=")) {
-                dateString = StringUtils.substringAfter(arg, "-date=");
-                dateString = StringUtils.trim(dateString);
-                try {
-                    startDate = dateFormat.parse(dateString);
-                    options++;
-                    modeOptions++;
-                } catch (ParseException e) {
-                    System.out.println("Unable to parse provided date string: " + dateString);
-                }
-            } else if (StringUtils.startsWith(arg, "-help")) {
-                help = true;
-            } else if (StringUtils.startsWith(arg, "-all")) {
-                all = true;
-                options++;
-                modeOptions++;
-            } else if (StringUtils.startsWith(arg, "-getCount")) {
-                getAllCount = true;
-                options++;
-                modeOptions++;
-            } else if (StringUtils.startsWith(arg, "-migrate")) {
-                migrate = true;
-            } else if (StringUtils.startsWith(arg, "-pidFile=")) {
-                pidFile = StringUtils.trim(StringUtils.substringAfter(arg, "-pidFile="));
-                options++;
-                modeOptions++;
-            } else if (StringUtils.startsWith(arg, "-startAt=")) {
-                options++;
-                String startAt = StringUtils.trim(StringUtils.substringAfter(arg, "-startAt="));
-                startIndex = Integer.valueOf(startAt).intValue();
-            } else if (StringUtils.startsWith(arg, "-count=")) {
-                String countStr = StringUtils.trim(StringUtils.substringAfter(arg, "-count="));
-                totalToProcess = Integer.valueOf(countStr).intValue();
-                options++;
-            } else if (StringUtils.startsWith(arg, "-skipProcessing")) {
-                skipProcessing = true;
-                options++;
-            } else if (StringUtils.startsWith(arg, "-skipGenerating")) {
-                skipGenerating = true;
-                options++;
-            } else if (StringUtils.startsWith(arg, "-listPids")) {
-                createPidList = true;
-                options++;
-                modeOptions++;
+        if (cmd.hasOption("date")) {
+            try {
+                startDate = dateFormat.parse(cmd.getOptionValue("date"));
+            } catch (ParseException e) {
+                System.out.println("Unable to parse provided date string: " + dateString);
+                // automatically generate the help statement
+                formatter.printHelp( "index build tool", options );
+               return; 
             }
         }
-
-        if (help) {
-            showHelp();
-            return;
-        }
-        if (modeOptions != 1) {
-            System.out
-                    .println("Exactly one option amoung -all, -date, -pidFile, -startAt may be used at a time.");
-            showHelp();
-            return;
-        } 
-        if (all) {
-            System.out.println("Performing full build/refresh of solr index.");
-        } 
-        else if (getAllCount) {
-            System.out.println("Getting count of all objects");
-        }
-        else if (createPidList) {
-            System.out.println("PidList");
-        }
-        else if (startDate != null) {
-            System.out.println("Performing (re)build from date: " + dateFormat.format(startDate) + ".");
-        } 
-        else if (pidFile != null) {
-            System.out.println("Performing refresh/index for pids found in file: " + pidFile);
-        }
-        else if (startIndex > 0) {
-            System.out.println("Performing index/refresh from hazelcast Identifier set index: "+ startIndex);
-        }
-
-        if (migrate) {
-            System.out.println("Refreash targeting the next version of the search index");
-        } else {
-            System.out.println("Refresh targeting the current live search index.");
-        }
         
-        if (totalToProcess > 0) {
-            System.out.println("Limiting refresh to " + totalToProcess + " items.");
-        }
-        
-        if (skipProcessing) {
-            System.out.println("skipProcessing flag is set...Tasks will be processed when index task processor " +
-            		"is started up or a future run without this flag");
-        }
-        if (skipGenerating) {
-            System.out.println("skipGenerating flag is set...Only existing tasks will be processed");
-        }
-        
-        
-        
-        System.out.println(" ");
-
         SolrIndexBuildTool indexTool = new SolrIndexBuildTool();
-        indexTool.setBuildNextIndex(migrate);
+        
         try {
-            refreshSolrIndex(indexTool, startDate, pidFile, totalToProcess, startIndex);
+            indexTool.doWork(cmd);
         } catch (Exception e) {
             System.out.println("Solr index refresh failed: " + e.getMessage());
             e.printStackTrace(System.out);
         }
 
         System.out.println("Exiting solr index refresh tool.");
-        System.exit(0);
     }
-
+    
     /**
-     * The main processing routine
+     * the main processing routine
      * 
      * @param indexTool
-     * @param dateParameter
-     * @param pidFilePath
-     * @param totalToProcess
-     * @param startIndex
+     * @param cmd
      */
-    private static void refreshSolrIndex(SolrIndexBuildTool indexTool, Date fromDate,
-            String pidFilePath, int totalToProcess, int startIndex) {
-        indexTool.configureContext();
+    public void doWork(CommandLine cmd)  {
+        
+        setBuildNextIndex(cmd.hasOption("migrate"));
+        configureContext();
         
         System.err.println("Starting work... (" + (new Date()) + ")");
         
     
-        indexTool.configureHazelcast();
+        configureHazelcast();
 
-        if (getAllCount) {
-            System.out.println("There is a pid total of " + indexTool.pids.size());
+        if (cmd.hasOption("getCount")) {
+            System.out.println("There is a pid total of " + pids.size());
             return;
         } 
-        else if (createPidList) {
+        
+        if (cmd.hasOption("listPids")) {
             System.err.println("Listing Pids (from Hazelcast Identifiers set)");
-            for (Identifier pid : indexTool.pids) {
+            for (Identifier pid : pids) {
                 System.out.println(pid.getValue());
             }
             return;
         }
+        
+        InputStream pidFileStream = null;
+        try{
 
-        try {
+            /// get list iterator from source
+            Collection<Identifier> pidSource= null;
 
-            ///// PROCESS FROM EITHER FILE OR HZ.IDENTIFIERS
+            
+            CHOOSE_SOURCE:
+                if (cmd.hasOption("all")) {
 
-            if (pidFilePath == null) {
-                System.err.println("Reindexing all from HZ.identifiers map, using date and index filters");
-                indexTool.generateIndexTasksAndProcess(fromDate, totalToProcess, startIndex);
-            } 
+                    System.err.println("Reindexing all from HZ.identifiers map, using date and index filters");
+                    pidSource = pids;
+
+                } else if (cmd.hasOption("pidFile")) {
+
+                    String filepath = cmd.getOptionValue("pidFile");
+                    pidSource = getPidList(filepath);
+
+                } else {
+
+                    return;
+                }
+
+            
+            List<Identifier> filteredPids = null;
+            
+            SLICE_SUBSET:
+                {
+                    Stream s = pidSource.stream();
+
+                    System.out.println("start  / count = " + cmd.getOptionValue("startAt") + " / " + cmd.getOptionValue("count"));
+                    if (cmd.hasOption("startAt")) 
+                        s = s.skip(Long.valueOf(cmd.getOptionValue("startAt")));
+
+                    if (cmd.hasOption("count"))
+                        s = s.limit(Long.valueOf(cmd.getOptionValue("count")));
+
+                    filteredPids =  (List<Identifier>) s.collect(Collectors.toList());
+
+                    System.out.println("********** post filtering pid count = " + filteredPids.size());
+                }
+            
+            
+            boolean usingGeneratorProcessor = cmd.hasOption("useIndexQueue") || cmd.hasOption("generateOnly") || cmd.hasOption("processOnly");
+            
+            
+            if (usingGeneratorProcessor) {
+
+                POPULATE_GENERATOR:
+                    if (!cmd.hasOption("processOnly")) {
+                        for (Identifier id : filteredPids) {
+
+                            SystemMetadata smd = systemMetadata.get(id);
+                            if (smd == null) {
+                                System.out.println("Unable to get system metadata for id: " + id.getValue());
+                                continue;
+                            }
+
+                            if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
+                                continue;
+
+                            String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+
+                            generator.processSystemMetaDataUpdate(smd, objectPath);
+                            System.out.println("Submitted index task for id: " + id.getValue());
+                        }
+                    }
+
+                PROCESS_TASKS:
+                    if (!cmd.hasOption("generateOnly")) {
+                        processor.processIndexTaskQueue();
+                    }
+            }
+                
             else {
-                System.err.println("Reindexing from pidFile");
-                indexTool.updateIndexForPids(pidFilePath);
+
+                PRIVATE_QUEUE_PROCESSING:
+                {  
+                    List<IndexTask> privateQueue = new ArrayList<>();
+                    for (Identifier id : filteredPids) {
+
+                        SystemMetadata smd = systemMetadata.get(id);
+                        if (smd == null) {
+                            System.out.println("Unable to get system metadata for id: " + id.getValue());
+                            continue;
+                        }
+
+                        if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
+                            continue;
+
+                        String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+
+
+                        IndexTask task = new IndexTask(smd, objectPath);
+                        task.setAddPriority();
+                        privateQueue.add(task); 
+                    }
+
+             
+                    processor.processIndexTaskQueue(privateQueue);
+                }
             }
 
 
             ////  WAIT FOR TASKS TO COMPLETE 
             ////      examine the futures to help not wait too long
 
-            Queue<Future> futures = indexTool.getIndexTaskProcessor().getFutureQueue();
+            Queue<Future> futures = getIndexTaskProcessor().getFutureQueue();
 
             System.out.println(futures.size() + " futures found in the indexProcessorFutureQueue.");
             if (futures.size() > 0) {
@@ -305,78 +362,113 @@ public class SolrIndexBuildTool {
 
             }
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         } 
         finally {
             logger.warn("Shutting down index task processor executor...");
-            indexTool.getIndexTaskProcessor().shutdownExecutor();
+            getIndexTaskProcessor().shutdownExecutor();
             logger.warn("Finishing work... (" + (new Date()) + ")");
             System.out.println("Finishing work... (" + (new Date()) + ")");
-            indexTool.shutdown();
+            shutdown();
         }
     }
 
 
 
+    /**
+     * returns a list of pids from the provided file,
+     * trimming leading and trailing whitespace,
+     * filtering out pids with internal whitespace and blank lines
+     * 
+     * @param filepath
+     * @return
+     * @throws FileNotFoundException
+     * @throws IOException
+     */
+    private List<Identifier> getPidList(String filepath) throws FileNotFoundException, IOException {
+        
+        try (InputStream pidFileStream  = new FileInputStream(filepath);
+                BufferedReader br = new BufferedReader(
+                        new InputStreamReader(pidFileStream, Charset.forName("UTF-8")))
+                ) {
+            
+            List<Identifier> pidList = new ArrayList<Identifier>();    
+
+            System.out.println("Generating tasks from pid list...");
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                String trimmed = StringUtils.trimToEmpty(line);
+                
+                // filter out empty and whitespace containing lines
+                if (trimmed.matches(".+\\s.+"))
+                    ;
+                else if (trimmed.length() == 0 )
+                    ;
+                else
+                    pidList.add(TypeFactory.buildIdentifier(trimmed));
+            }
+            return pidList;
+        } 
+    }
 
     private void updateIndexForPids(String pidFilePath) {
         
         
         ////// GENERATE .....
         
-        InputStream pidFileStream = null;
-        try {
-            if (skipGenerating) {
-                System.out.println("Skipping task generation, as per -skipGenerating argument.");
-            } else {
-                pidFileStream = new FileInputStream(pidFilePath);
-                BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream, Charset.forName("UTF-8")));
-            
-                System.out.println("Generating tasks from pid list...");
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    createIndexTaskForPid(StringUtils.trim(line));
-                }
-                System.out.println("All tasks generated...");
-            }
-                
-        } catch (IOException e) {
-            System.out.println("Error reading line from pid file");
-            return;
-        } finally {
-            IOUtils.closeQuietly(pidFileStream);
-        }
+//        InputStream pidFileStream = null;
+//        try {
+//            if (true /*skipGenerating*/) {
+//                System.out.println("Skipping task generation, as per -skipGenerating argument.");
+//            } else {
+//                pidFileStream = new FileInputStream(pidFilePath);
+//                BufferedReader br = new BufferedReader(new InputStreamReader(pidFileStream, Charset.forName("UTF-8")));
+//            
+//                System.out.println("Generating tasks from pid list...");
+//                String line = null;
+//                while ((line = br.readLine()) != null) {
+//                    createIndexTaskForPid(StringUtils.trim(line));
+//                }
+//                System.out.println("All tasks generated...");
+//            }
+//                
+//        } catch (IOException e) {
+//            System.out.println("Error reading line from pid file");
+//            return;
+//        } finally {
+//            IOUtils.closeQuietly(pidFileStream);
+//        }
 
         
         ////// PROCESS .....
         
-        if (skipProcessing) {
-            System.out.println("Skipping processing, as per -skipProcessing argument.");
-        } else {
-            System.out.println("Starting index processor...");
-            processIndexTasks();
-            System.out.println("Index processor execution complete...");
-        } 
+//        if (true /*skipProcessing*/) {
+//            System.out.println("Skipping processing, as per -skipProcessing argument.");
+//        } else {
+//            System.out.println("Starting index processor...");
+//            processor.processIndexTaskQueue();
+//            System.out.println("Index processor execution complete...");
+//        } 
     }
 
     
     
     
-    private void createIndexTaskForPid(String pid) {
-        if (StringUtils.isNotEmpty(pid)) {
-            Identifier identifier = new Identifier();
-            identifier.setValue(pid);
-            SystemMetadata smd = systemMetadata.get(identifier);
-            if (smd == null) {
-                System.out.println("Unable to get system metadata for id: " + pid);
-            } else {
-                String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-                generator.processSystemMetaDataUpdate(smd, objectPath);
-                System.out.println("Created index task for id: " + pid);
-            }
-        }
-    }
+//    private void createIndexTaskForPid(String pid) {
+//        if (StringUtils.isNotEmpty(pid)) {
+//            Identifier identifier = new Identifier();
+//            identifier.setValue(pid);
+//            SystemMetadata smd = systemMetadata.get(identifier);
+//            if (smd == null) {
+//                System.out.println("Unable to get system metadata for id: " + pid);
+//            } else {
+//                String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+//                generator.processSystemMetaDataUpdate(smd, objectPath);
+//                System.out.println("Created index task for id: " + pid);
+//            }
+//        }
+//    }
 
     private void generateIndexTasksAndProcess(Date fromDate, int totalToProcess, int startIndex) {
         System.out.println("Generating index updates: "+(new Date()));
@@ -462,12 +554,12 @@ public class SolrIndexBuildTool {
         processor.processIndexTaskQueue();
     }
 
-    private void processIndexTasks() {
-        /*if (BATCH_UPDATE)
-            processor.batchProcessIndexTaskQueue();
-        else*/
-            processor.processIndexTaskQueue();
-    }
+//    private void processIndexTasks() {
+//        /*if (BATCH_UPDATE)
+//            processor.batchProcessIndexTaskQueue();
+//        else*/
+//            processor.processIndexTaskQueue();
+//    }
 
     private String retrieveObjectPath(String pid) {
         Identifier PID = new Identifier();
@@ -503,61 +595,61 @@ public class SolrIndexBuildTool {
         }
     }
 
-    private static void showHelp() {
-        System.out.println("DataONE solr index build tool help:");
-        System.out.println(" ");
-        System.out.println("This tool indexes objects the CN's system metadata map.");
-        System.out.println("   Nothing is removed from the solr index, just added/updated.");
-        System.out.println(" ");
-        System.out.println("Please stop the d1-index-task-processor while this tool runs: ");
-        System.out.println("       /etc/init.d/d1-index-task-processor stop");
-        System.out.println("And restart whent the tool finishes:");
-        System.out.println("       /etc/init.d/d1-index-task-processor start");
-        System.out.println(" ");
-        System.out.println("-date=     System data modified date to begin index build/refresh from.");
-        System.out.println("             Data objects modified/added after this date will be indexed.");
-        System.out.println("             Date format: mm/dd/yyyy.");
-        System.out.println(" ");
-        System.out.println("-all       Build/refresh all data objects regardless of modified date.");
-        System.out.println(" ");
-        System.out.println("-startAt=  Build/refresh objects, starting at this index in the hazelcast Identifiers Set.");
-        System.out.println(" ");
-        System.out.println("-pidFile=  Refresh index document for pids contained in the file path ");
-        System.out.println("             supplied with this option.  File should contain one pid per line.");
-        System.out.println(" ");
-        System.out.println("-migrate   Build/refresh data object into the next search index");
-        System.out.println("             version's core - as configured in: ");
-        System.out.println("              /etc/dataone/solr-next.properties");
-        System.out.println(" ");
-        System.out.println("-count=    Build/refresh a number data objects, the number configured by this option.");
-        System.out.println("             This option is primarily intended for testing purposes.");
-        System.out.println(" ");
-        System.out.println("-skipProcessing   Don't process tasks");
-        System.out.println(" ");
-        System.out.println("-skipGenerating   Don't generate new tasks");
-        System.out.println(" ");
-        System.out.println("-getCount       Only get a count of how many the -all option will process");
-        System.out.println(" ");
-        System.out.println("-listPids       Output a list of all pids");
-        System.out.println(" ");
-        
-        
-        System.out.println("Exactly one option among -date, -all, -pidFile, or -startAt must be specified.");
-    }
+//    private static void showHelp() {
+//        System.out.println("DataONE solr index build tool help:");
+//        System.out.println(" ");
+//        System.out.println("This tool indexes objects the CN's system metadata map.");
+//        System.out.println("   Nothing is removed from the solr index, just added/updated.");
+//        System.out.println(" ");
+//        System.out.println("Please stop the d1-index-task-processor while this tool runs: ");
+//        System.out.println("       /etc/init.d/d1-index-task-processor stop");
+//        System.out.println("And restart whent the tool finishes:");
+//        System.out.println("       /etc/init.d/d1-index-task-processor start");
+//        System.out.println(" ");
+//        System.out.println("-date=     System data modified date to begin index build/refresh from.");
+//        System.out.println("             Data objects modified/added after this date will be indexed.");
+//        System.out.println("             Date format: mm/dd/yyyy.");
+//        System.out.println(" ");
+//        System.out.println("-all       Build/refresh all data objects regardless of modified date.");
+//        System.out.println(" ");
+//        System.out.println("-startAt=  Build/refresh objects, starting at this index in the hazelcast Identifiers Set.");
+//        System.out.println(" ");
+//        System.out.println("-pidFile=   ");
+//        System.out.println("             Refresh index document for pids contained in the file path supplied with this option.  File should contain one pid per line.");
+//        System.out.println(" ");
+//        System.out.println("-migrate   Build/refresh data object into the next search index");
+//        System.out.println("             ");
+//        System.out.println("              Build/refresh data object into the next search index version's core - as configured in: /etc/dataone/solr-next.properties");
+//        System.out.println(" ");
+//        System.out.println("-count=    Build/refresh a number data objects, the number configured by this option.");
+//        System.out.println("             This option is primarily intended for testing purposes.");
+//        System.out.println(" ");
+//        System.out.println("-skipProcessing   Don't process tasks");
+//        System.out.println(" ");
+//        System.out.println("-skipGenerating   Don't generate new tasks");
+//        System.out.println(" ");
+//        System.out.println("-getCount       Only get a count of how many the -all option will process");
+//        System.out.println(" ");
+//        System.out.println("-listPids       Output a list of all pids");
+//        System.out.println(" ");
+//        
+//        
+//        System.out.println("Exactly one option among -date, -all, -pidFile, or -startAt must be specified.");
+//    }
 
     private void setBuildNextIndex(boolean next) {
         this.buildNextIndex = next;
     }
 
-    private InputStream openPidFile(String pidFilePath) {
-        InputStream pidFileStream = null;
-        try {
-            pidFileStream = new FileInputStream(pidFilePath);
-        } catch (FileNotFoundException e) {
-            System.out.println("Unable to open file at: " + pidFilePath + ".  Exiting.");
-        }
-        return pidFileStream;
-    }
+//    private InputStream openPidFile(String pidFilePath) {
+//        InputStream pidFileStream = null;
+//        try {
+//            pidFileStream = new FileInputStream(pidFilePath);
+//        } catch (FileNotFoundException e) {
+//            System.out.println("Unable to open file at: " + pidFilePath + ".  Exiting.");
+//        }
+//        return pidFileStream;
+//    }
     
     public IndexTaskProcessor getIndexTaskProcessor() {
         return processor;
