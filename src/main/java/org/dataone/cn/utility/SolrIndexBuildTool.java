@@ -243,6 +243,7 @@ public class SolrIndexBuildTool {
         
         boolean exceptionThrown = false;
         int futuresCount = 0;
+        Set<Future> doneFutures = new HashSet<>();
         try{
 
             /// get list iterator from source
@@ -284,55 +285,59 @@ public class SolrIndexBuildTool {
                     return;
                 }
             
-            if (cmd.hasOption("useIndexQueue") || cmd.hasOption("generateOnly")) {
-                // populate indexQueue from filtered list
-                for (Identifier id : filteredPids) {
+            FILL_INDEX_TASK_QUEUE:
+                if (cmd.hasOption("useIndexQueue") || cmd.hasOption("generateOnly")) {
+                    // populate indexQueue from filtered list
+                    for (Identifier id : filteredPids) {
 
-                    SystemMetadata smd = systemMetadata.get(id);
-                    if (smd == null) {
-                        System.out.println("Unable to get system metadata for id: " + id.getValue());
-                        continue;
+                        SystemMetadata smd = systemMetadata.get(id);
+                        if (smd == null) {
+                            System.out.println("Unable to get system metadata for id: " + id.getValue());
+                            continue;
+                        }
+
+                        if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
+                            continue;
+
+                        String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+
+                        generator.processSystemMetaDataUpdate(smd, objectPath);
+                        System.out.println("Submitted index task for id: " + id.getValue());
                     }
 
-                    if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
-                        continue;
-
-                    String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-
-                    generator.processSystemMetaDataUpdate(smd, objectPath);
-                    System.out.println("Submitted index task for id: " + id.getValue());
                 }
-            
-            }
-            if  (cmd.hasOption("useIndexQueue") || cmd.hasOption("processOnly")) {
-               processor.processIndexTaskQueue();
+                if (cmd.hasOption("generateOnly")) {
+                    return;
+                }
+                
+            RUN_PROCESSOR:    
+                
+                if  (cmd.hasOption("useIndexQueue") || cmd.hasOption("processOnly")) {
+                    processor.processIndexTaskQueue();
                
-            }
-            
-            if (!cmd.hasOption("useIndexQueue") && !cmd.hasOption("generateOnly") && !cmd.hasOption("processOnly")) {
-                
-         
-                List<IndexTask> privateQueue = new ArrayList<>();
-                for (Identifier id : filteredPids) {
+                } else {
+                   // create a private queue to run the processor with
+                    List<IndexTask> privateQueue = new ArrayList<>();
+                    for (Identifier id : filteredPids) {
+                        
+                        SystemMetadata smd = systemMetadata.get(id);
+                        if (smd == null) {
+                            System.out.println("Unable to get system metadata for id: " + id.getValue());
+                            continue;
+                        }
 
-                    SystemMetadata smd = systemMetadata.get(id);
-                    if (smd == null) {
-                        System.out.println("Unable to get system metadata for id: " + id.getValue());
-                        continue;
+                        if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
+                            continue;
+
+                        String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+
+                        IndexTask task = new IndexTask(smd, objectPath);
+                        task.setAddPriority();
+                        privateQueue.add(task); 
                     }
 
-                    if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
-                        continue;
-
-                    String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-
-                    IndexTask task = new IndexTask(smd, objectPath);
-                    task.setAddPriority();
-                    privateQueue.add(task); 
+                    processor.processIndexTaskQueue(privateQueue);
                 }
-                
-                processor.processIndexTaskQueue(privateQueue);
-            }
             
 
 
@@ -347,7 +352,6 @@ public class SolrIndexBuildTool {
                 System.out.println("... waiting maximum of " + totalTimeout + "ms to finish (2s per future...");
 
                 long start = System.currentTimeMillis();
-                Set<Future> doneFutures = new HashSet<>();
                 while (System.currentTimeMillis() < start + totalTimeout) {
 
                     for(Future future : futures) {
@@ -356,9 +360,10 @@ public class SolrIndexBuildTool {
                             doneFutures.add(future);
                         }
                     }
-
-                    if (doneFutures.size() == futuresCount)
+                    if (doneFutures.size() == futuresCount) {
+                        System.out.println("all futures are done (" + futuresCount + ")");
                         break;
+                    }
 
                     Thread.sleep(2000);
                     System.out.println("Total of " + doneFutures.size() + " futures of " + futures.size() + " are done.");
@@ -390,13 +395,13 @@ public class SolrIndexBuildTool {
             }
         } 
         finally {
-            // shutdown gracefully
-            logger.warn("Shutting down index task processor executor...");
-            getIndexTaskProcessor().shutdownExecutor();
-            logger.warn("Finishing work... (" + (new Date()) + ")");
-            System.out.println("Finishing work... (" + (new Date()) + ")");
-            shutdown();
-            
+            if (doneFutures.size() < futuresCount) {
+                logger.warn("Shutting down index task processor executor...");
+                getIndexTaskProcessor().shutdownExecutor();
+                logger.warn("Finishing work... (" + (new Date()) + ")");
+                System.out.println("Finishing work... (" + (new Date()) + ")");
+                shutdown();
+            }
         }
     }
 
