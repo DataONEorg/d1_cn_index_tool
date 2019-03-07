@@ -143,7 +143,7 @@ public class SolrIndexBuildTool {
             cmd = parser.parse( options, args );
         } catch (org.apache.commons.cli.ParseException e) {
          // oops, something went wrong
-            System.err.println( "Parsing failed.  Reason: " + e.getMessage() );
+            System.err.println( "Command Line Parsing failed.  Reason: " + e.getMessage() );
         } 
         
         HelpFormatter formatter = new HelpFormatter();
@@ -166,6 +166,21 @@ public class SolrIndexBuildTool {
             formatter.printHelp( "index build tool", options );
             return;
         }
+        // (zero exclusive options are ok too)
+        
+        exclusiveOptions = new String[]{"processOnly","generateOnly","useIndexQueue"};
+        excl = 0;
+        for (int i=0; i<exclusiveOptions.length; i++) {
+            if (cmd.hasOption(exclusiveOptions[i])) 
+                excl++;
+        }
+        if (excl > 1) {
+            System.err.println("Only one of -processOnly, -generateOnly, -useIndexQueue,can be used!!");
+            // automatically generate the help statement
+            formatter.printHelp( "index build tool", options );
+            return;
+        }
+        // (zero exclusive options are ok too)
         
         
         // validate Date value
@@ -200,8 +215,9 @@ public class SolrIndexBuildTool {
      * 
      * @param indexTool
      * @param cmd
+     * @throws InterruptedException 
      */
-    public void doWork(CommandLine cmd)  {
+    public void doWork(CommandLine cmd) throws InterruptedException  {
         
         setBuildNextIndex(cmd.hasOption("migrate"));
         configureContext();
@@ -212,7 +228,7 @@ public class SolrIndexBuildTool {
         configureHazelcast();
 
         if (cmd.hasOption("getCount")) {
-            System.out.println("There is a pid total of " + pids.size());
+            System.out.println("There is a pid total (from HZ Identifier set) of " + pids.size());
             return;
         } 
         
@@ -224,12 +240,14 @@ public class SolrIndexBuildTool {
             return;
         }
         
-        InputStream pidFileStream = null;
+        
+        boolean exceptionThrown = false;
+        int futuresCount = 0;
         try{
 
             /// get list iterator from source
             Collection<Identifier> pidSource= null;
-
+            
             
             CHOOSE_SOURCE:
                 if (cmd.hasOption("all")) {
@@ -241,17 +259,14 @@ public class SolrIndexBuildTool {
 
                     String filepath = cmd.getOptionValue("pidFile");
                     pidSource = getPidList(filepath);
-
-                } else {
-
-                    return;
+                    
                 }
-
-            
+          
             List<Identifier> filteredPids = null;
             
             SLICE_SUBSET:
-                {
+                if  (pidSource != null) { 
+                   
                     Stream s = pidSource.stream();
 
                     System.out.println("start  / count = " + cmd.getOptionValue("startAt") + " / " + cmd.getOptionValue("count"));
@@ -264,83 +279,76 @@ public class SolrIndexBuildTool {
                     filteredPids =  (List<Identifier>) s.collect(Collectors.toList());
 
                     System.out.println("********** post filtering pid count = " + filteredPids.size());
+            
+                } else if (!cmd.hasOption("processOnly")) {
+                    return;
                 }
             
-            
-            boolean usingGeneratorProcessor = cmd.hasOption("useIndexQueue") || cmd.hasOption("generateOnly") || cmd.hasOption("processOnly");
-            
-            
-            if (usingGeneratorProcessor) {
+            if (cmd.hasOption("useIndexQueue") || cmd.hasOption("generateOnly")) {
+                // populate indexQueue from filtered list
+                for (Identifier id : filteredPids) {
 
-                POPULATE_GENERATOR:
-                    if (!cmd.hasOption("processOnly")) {
-                        for (Identifier id : filteredPids) {
-
-                            SystemMetadata smd = systemMetadata.get(id);
-                            if (smd == null) {
-                                System.out.println("Unable to get system metadata for id: " + id.getValue());
-                                continue;
-                            }
-
-                            if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
-                                continue;
-
-                            String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-
-                            generator.processSystemMetaDataUpdate(smd, objectPath);
-                            System.out.println("Submitted index task for id: " + id.getValue());
-                        }
+                    SystemMetadata smd = systemMetadata.get(id);
+                    if (smd == null) {
+                        System.out.println("Unable to get system metadata for id: " + id.getValue());
+                        continue;
                     }
 
-                PROCESS_TASKS:
-                    if (!cmd.hasOption("generateOnly")) {
-                        processor.processIndexTaskQueue();
-                    }
+                    if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
+                        continue;
+
+                    String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+
+                    generator.processSystemMetaDataUpdate(smd, objectPath);
+                    System.out.println("Submitted index task for id: " + id.getValue());
+                }
+            
             }
+            if  (cmd.hasOption("useIndexQueue") || cmd.hasOption("processOnly")) {
+               processor.processIndexTaskQueue();
+               
+            }
+            
+            if (!cmd.hasOption("useIndexQueue") && !cmd.hasOption("generateOnly") && !cmd.hasOption("processOnly")) {
                 
-            else {
+         
+                List<IndexTask> privateQueue = new ArrayList<>();
+                for (Identifier id : filteredPids) {
 
-                PRIVATE_QUEUE_PROCESSING:
-                {  
-                    List<IndexTask> privateQueue = new ArrayList<>();
-                    for (Identifier id : filteredPids) {
-
-                        SystemMetadata smd = systemMetadata.get(id);
-                        if (smd == null) {
-                            System.out.println("Unable to get system metadata for id: " + id.getValue());
-                            continue;
-                        }
-
-                        if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
-                            continue;
-
-                        String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
-
-
-                        IndexTask task = new IndexTask(smd, objectPath);
-                        task.setAddPriority();
-                        privateQueue.add(task); 
+                    SystemMetadata smd = systemMetadata.get(id);
+                    if (smd == null) {
+                        System.out.println("Unable to get system metadata for id: " + id.getValue());
+                        continue;
                     }
 
-             
-                    processor.processIndexTaskQueue(privateQueue);
+                    if (!IgnoringIndexIdPool.isNotIgnorePid(smd))  // don't you love the double negative? 
+                        continue;
+
+                    String objectPath = retrieveObjectPath(smd.getIdentifier().getValue());
+
+                    IndexTask task = new IndexTask(smd, objectPath);
+                    task.setAddPriority();
+                    privateQueue.add(task); 
                 }
+                
+                processor.processIndexTaskQueue(privateQueue);
             }
+            
 
 
             ////  WAIT FOR TASKS TO COMPLETE 
             ////      examine the futures to help not wait too long
 
             Queue<Future> futures = getIndexTaskProcessor().getFutureQueue();
-
+            futuresCount = futures.size(); // used in finally block
             System.out.println(futures.size() + " futures found in the indexProcessorFutureQueue.");
-            if (futures.size() > 0) {
-                int totalTimeout = 2 * futures.size() * 2000; 
+            if (futuresCount > 0) {
+                int totalTimeout = futuresCount * 2000; 
                 System.out.println("... waiting maximum of " + totalTimeout + "ms to finish (2s per future...");
 
                 long start = System.currentTimeMillis();
                 Set<Future> doneFutures = new HashSet<>();
-                while (System.currentTimeMillis() < start + totalTimeout * 1000) {
+                while (System.currentTimeMillis() < start + totalTimeout) {
 
                     for(Future future : futures) {
 
@@ -349,14 +357,14 @@ public class SolrIndexBuildTool {
                         }
                     }
 
-                    if (doneFutures.size() == futures.size())
+                    if (doneFutures.size() == futuresCount)
                         break;
 
                     Thread.sleep(2000);
                     System.out.println("Total of " + doneFutures.size() + " futures of " + futures.size() + " are done.");
                 }
-                if (doneFutures.size() < futures.size()) {
-                    System.out.println("Not all futures completed before timing out. There are " + (futures.size() - doneFutures.size())
+                if (doneFutures.size() < futuresCount) {
+                    System.out.println("Not all futures completed before timing out. There are " + (futuresCount - doneFutures.size())
                             + " not done.");
                 }
 
@@ -364,13 +372,31 @@ public class SolrIndexBuildTool {
 
         } catch (Throwable e) {
             e.printStackTrace();
+            exceptionThrown = true;
+            System.out.print("Throwable thrown. Recalculating futureQueue.size from the executor.  Was " + futuresCount);
+            futuresCount = getIndexTaskProcessor().getFutureQueue().size();
+            System.out.println(".  Now " + futuresCount);
+            System.out.println("Exception thrown during processing, so waiting the maximum time (" 
+                    + 2 * futuresCount + " seconds) before shutting down");
+            
+            long startWait = System.currentTimeMillis();
+            try {
+                Thread.sleep(futuresCount * 2000);
+            } catch (InterruptedException e1) {
+                System.out.println("Are you sure you want to interrupt?  Signal again to break out of waiting period.");
+                long elapsed = System.currentTimeMillis() - startWait;
+                Thread.sleep(futuresCount * 2000 - elapsed);
+                
+            }
         } 
         finally {
+            // shutdown gracefully
             logger.warn("Shutting down index task processor executor...");
             getIndexTaskProcessor().shutdownExecutor();
             logger.warn("Finishing work... (" + (new Date()) + ")");
             System.out.println("Finishing work... (" + (new Date()) + ")");
             shutdown();
+            
         }
     }
 
@@ -389,9 +415,10 @@ public class SolrIndexBuildTool {
     private List<Identifier> getPidList(String filepath) throws FileNotFoundException, IOException {
         
         try (InputStream pidFileStream  = new FileInputStream(filepath);
-                BufferedReader br = new BufferedReader(
-                        new InputStreamReader(pidFileStream, Charset.forName("UTF-8")))
-                ) {
+             BufferedReader br = new BufferedReader(
+             new InputStreamReader(pidFileStream, Charset.forName("UTF-8")))
+                ) 
+        {
             
             List<Identifier> pidList = new ArrayList<Identifier>();    
 
