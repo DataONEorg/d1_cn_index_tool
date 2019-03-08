@@ -379,8 +379,12 @@ public class SolrIndexBuildTool {
             e.printStackTrace();
             exceptionThrown = true;
             System.out.print("Throwable thrown. Recalculating futureQueue.size from the executor.  Was " + futuresCount);
-            futuresCount = getIndexTaskProcessor().getFutureQueue().size();
-            System.out.println(".  Now " + futuresCount);
+            try {
+                futuresCount = getIndexTaskProcessor().getFutureQueue().size();
+                System.out.println(".  Now " + futuresCount);
+            } catch (Throwable t) {
+                ;
+            }
             System.out.println("Exception thrown during processing, so waiting the maximum time (" 
                     + 2 * futuresCount + " seconds) before shutting down");
             
@@ -398,10 +402,11 @@ public class SolrIndexBuildTool {
             if (doneFutures.size() < futuresCount) {
                 logger.warn("Shutting down index task processor executor...");
                 getIndexTaskProcessor().shutdownExecutor();
-                logger.warn("Finishing work... (" + (new Date()) + ")");
-                System.out.println("Finishing work... (" + (new Date()) + ")");
-                shutdown();
             }
+            logger.warn("Finishing work... (" + (new Date()) + ")");
+            System.out.println("Finishing work... (" + (new Date()) + ")");
+            shutdown();
+            
         }
     }
 
