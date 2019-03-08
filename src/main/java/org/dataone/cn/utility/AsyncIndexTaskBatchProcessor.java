@@ -43,7 +43,7 @@ public class AsyncIndexTaskBatchProcessor  {
 
 	public void processIndexTaskQueue() {
 		//       logProcessorLoad();
-
+/*
 		IndexTask[] queue = (IndexTask[]) processor.getIndexTaskQueue().toArray();
 		//        IndexTask task = getNextIndexTask(queue);
 
@@ -60,13 +60,13 @@ public class AsyncIndexTaskBatchProcessor  {
 
     	// effectively process failed tasks from previous run
     	processor.processFailedIndexTaskQueue();
-    	/*List<IndexTask> retryQueue = getIndexTaskRetryQueue();
-        task = getNextIndexTask(retryQueue);
-        while (task != null) {
-            processTaskOnThread(task);
-            task = getNextIndexTask(retryQueue);
-        }*/
-
+    	//List<IndexTask> retryQueue = getIndexTaskRetryQueue();
+    //    task = getNextIndexTask(retryQueue);
+    //    while (task != null) {
+    //        processTaskOnThread(task);
+    //        task = getNextIndexTask(retryQueue);
+    //    }
+*/
     }
 
     
