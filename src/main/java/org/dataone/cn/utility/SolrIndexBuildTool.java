@@ -340,7 +340,6 @@ public class SolrIndexBuildTool {
                 }
             
 
-
             ////  WAIT FOR TASKS TO COMPLETE 
             ////      examine the futures to help not wait too long
 
@@ -350,7 +349,7 @@ public class SolrIndexBuildTool {
             if (futuresCount > 0) {
                 int totalTimeout = futuresCount * 2000; 
                 System.out.println("... waiting maximum of " + totalTimeout + "ms to finish (2s per future...");
-
+                
                 long start = System.currentTimeMillis();
                 while (System.currentTimeMillis() < start + totalTimeout) {
 
@@ -361,7 +360,9 @@ public class SolrIndexBuildTool {
                         }
                     }
                     if (doneFutures.size() == futuresCount) {
-                        System.out.println("all futures are done (" + futuresCount + ")");
+                        int coolDownMillis = futuresCount > 9000 ? futuresCount/3 : 3000;
+                        System.out.println("all futures are done (" + futuresCount + "). Cooling-down for " + coolDownMillis + " millis.");
+                        Thread.sleep(coolDownMillis);  // this is a cool-down period 
                         break;
                     }
 
