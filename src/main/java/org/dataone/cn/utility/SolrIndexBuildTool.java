@@ -135,6 +135,7 @@ public class SolrIndexBuildTool {
         options.addOption("processOnly", false, "Don't generate new tasks");
         options.addOption("migrate", false, "Build/refresh data object into the next search index version's core " +
         		"- as configured in: /etc/dataone/solr-next.properties");
+        options.addOption("stayAlive", false, "if set, keeps process alive until interrupt received.  Use primarily for profiling.");
         
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
@@ -206,7 +207,16 @@ public class SolrIndexBuildTool {
             System.out.println("Solr index refresh failed: " + e.getMessage());
             e.printStackTrace(System.out);
         }
-
+        if (cmd.hasOption("stayAlive")) {
+            while (true) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    System.out.println("Interrupt received...");
+                    break;
+                }
+            }
+        }
         System.out.println("Exiting solr index refresh tool.");
     }
     
