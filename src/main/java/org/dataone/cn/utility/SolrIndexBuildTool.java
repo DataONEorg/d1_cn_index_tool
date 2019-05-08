@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,6 +51,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.jena.atlas.logging.Log;
 import org.apache.log4j.Logger;
 import org.dataone.cn.hazelcast.HazelcastClientFactory;
 import org.dataone.cn.index.generator.IndexTaskGenerator;
@@ -208,6 +210,7 @@ public class SolrIndexBuildTool {
             e.printStackTrace(System.out);
         }
         if (cmd.hasOption("stayAlive")) {
+            
             while (true) {
                 try {
                     Thread.sleep(60000);
@@ -367,6 +370,15 @@ public class SolrIndexBuildTool {
 
                         if (!doneFutures.contains(future) && future.isDone()) {
                             doneFutures.add(future);
+                            try {
+                                future.get(100, TimeUnit.MILLISECONDS);
+                            } catch (Throwable t) {
+                                Throwable cause = t.getCause();
+                                if (cause == null) {
+                                    cause = t;
+                                }
+                                logger.warn("Exception returned from the thread: " + cause.getClass().getSimpleName() + ":: " + cause.getMessage());
+                            }
                         }
                     }
                     if (doneFutures.size() == futuresCount) {
