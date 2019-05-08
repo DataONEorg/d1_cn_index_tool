@@ -378,6 +378,7 @@ public class SolrIndexBuildTool {
                                     cause = t;
                                 }
                                 logger.warn("Exception returned from the thread: " + cause.getClass().getSimpleName() + ":: " + cause.getMessage());
+                                t.printStackTrace();
                             }
                         }
                     }
