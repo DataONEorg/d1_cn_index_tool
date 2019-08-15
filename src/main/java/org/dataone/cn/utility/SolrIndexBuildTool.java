@@ -356,7 +356,7 @@ public class SolrIndexBuildTool {
             ////  WAIT FOR TASKS TO COMPLETE 
             ////      examine the futures to help not wait too long
 
-            Queue<Future> futures = getIndexTaskProcessor().getFutureQueue();
+            Queue<Future<Void>> futures = getIndexTaskProcessor().getFutureQueue();
             futuresCount = futures.size(); // used in finally block
             System.out.println(futures.size() + " futures found in the indexProcessorFutureQueue.");
             if (futuresCount > 0) {
@@ -594,7 +594,7 @@ public class SolrIndexBuildTool {
         logger.info("Submitting all new index tasks has completed in the generaterIndexTasksAndProcess");
         //wait until previous indexing to be finished
         try {
-            Queue<Future> futures = getIndexTaskProcessor().getFutureQueue();
+            Queue<Future<Void>> futures = getIndexTaskProcessor().getFutureQueue();
             for(Future future : futures) {
                 for(int i=0; i<60; i++) {
                     if(future != null && !future.isDone()) {
