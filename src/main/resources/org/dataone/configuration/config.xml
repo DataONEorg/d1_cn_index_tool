@@ -4,4 +4,5 @@
 	<properties fileName="index-tool.properties"/>
 	<properties fileName="file:/etc/dataone/node.properties" />
 	<properties fileName="file:/etc/dataone/index/d1client.properties" />
+	<properties fileName="file:/etc/dataone/index/cn-index-tool.properties" />
 </configuration>
