@@ -221,6 +221,7 @@ public class SolrIndexBuildTool {
             }
         }
         System.out.println("Exiting solr index refresh tool.");
+	System.exit(0);
     }
     
     /**
@@ -296,7 +297,9 @@ public class SolrIndexBuildTool {
             
                 } else if (!cmd.hasOption("processOnly")) {
                     return;
-                }
+                } else {
+		    filteredPids = (List)pidSource;
+		}
             
             FILL_INDEX_TASK_QUEUE:
                 if (cmd.hasOption("useIndexQueue") || cmd.hasOption("generateOnly")) {
@@ -321,7 +324,7 @@ public class SolrIndexBuildTool {
                 }
                 if (cmd.hasOption("generateOnly")) {
                     return;
-                }
+                } 
                 
             RUN_PROCESSOR:    
                 
