@@ -122,7 +122,7 @@ public class SolrIndexBuildTool {
         Options options = new Options();
         options.addOption("help", false, "print this message");
 
-        options.addOption("getCount", false, "print this message");
+        options.addOption("getCount", false, "returns the number of pids in the HZ Identifiers set");
         options.addOption("listPids", false, "Output a list of all pids");
         options.addOption("all", false, "reindex from HZ identifiers set from the object store");        
         options.addOption("pidFile", true, "Refresh index document for pids contained in the file " +
