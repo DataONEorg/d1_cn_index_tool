@@ -38,6 +38,7 @@ import org.dataone.service.types.v1.SystemMetadata;
 import org.dataone.service.util.TypeMarshaller;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,6 +91,7 @@ public class SolrIndexBuildToolTest {
     @Autowired
     private Resource systemMetadataResource5; // resource map for 1-4
 
+    @Ignore
     @Test
     public void testSolrIndexRefreshTool() {
 
@@ -100,6 +102,7 @@ public class SolrIndexBuildToolTest {
         addSystemMetadata(systemMetadataResource4);
         addSystemMetadata(systemMetadataResource5);
 
+	System.out.println("resources added.  Running  SolrIndexBuildTool,main(\"-all\")...");
         try {
             SolrIndexBuildTool.main(new String[] { "-all" });
         } catch (Exception e) {
