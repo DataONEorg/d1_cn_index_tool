@@ -6,8 +6,7 @@
     	http://www.springframework.org/schema/context
     	http://www.springframework.org/schema/context/spring-context-3.0.xsd">
     	
-<!--	<import resource="classpath:index-context-file-includes.xml" />
-    -->
+	<import resource="classpath:index-context-file-includes.xml" />
 	<import resource="classpath:generator-context.xml"/>
  	<import resource="classpath:index-processor-context.xml"/>
 </beans>

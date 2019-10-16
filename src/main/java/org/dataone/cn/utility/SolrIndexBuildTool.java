@@ -82,6 +82,7 @@ public class SolrIndexBuildTool {
     private static final String HZ_IDENTIFIERS = Settings.getConfiguration().getString(
             "dataone.hazelcast.identifiers");
 
+    private static final String STANDARD_FS_CONFIG_LOCATION = '/etc/dataone/index/index-generation-context/';
     private static final String DEFAULT_INDEX_APPLICATION_CONTEXT = "index-tool-context.xml";
     private static final String NEXT_INDEX_APPLICATION_CONTEXT = "index-tool-next-context.xml";
 
@@ -640,14 +641,25 @@ public class SolrIndexBuildTool {
     }
 
     private void configureContext() {
+	String contextFileName;
         if (buildNextIndex) {
-            context = new ClassPathXmlApplicationContext(NEXT_INDEX_APPLICATION_CONTEXT);
-        } else {
-            context = new ClassPathXmlApplicationContext(DEFAULT_INDEX_APPLICATION_CONTEXT);
+	    contextFileName = NEXT_INDEX_APPLICATION_CONTEXT;
+	} else {
+	    contextFileName = DEFAULT_INDEX_APPLICATION_CONTEXT;
+	}
+	logger.warn("solrIndexBuildTool - context from filename: " + contextFileName);
+        try {
+            logger.warn("SolrIndexBuildTool - trying file system location first...");
+            context = new FileSystemXmlApplicationContext(STANDARD_FS_CONFIG_LOCATION . contextFileName);
+        } catch (Exception e) {
+            logger.warn("SolrIndexBuildTool - Falling back to configuration included in jar file.");
+            context = new ClassPathXmlApplicationContext(contextFileName);
         }
+
         generator = (IndexTaskGenerator) context.getBean("indexTaskGenerator");
         processor = (IndexTaskProcessor) context.getBean("indexTaskProcessor");
     }
+
 
     private void shutdown() {
         
