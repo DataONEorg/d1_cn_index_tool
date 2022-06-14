@@ -3,7 +3,7 @@
   <groupId>org.dataone</groupId>
   <artifactId>d1_cn_index_tool</artifactId>
   <name>d1_cn_index_tool</name>
-  <version>2.3.14</version>
+  <version>2.3.15</version>
 	<properties>
   		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compiler.target.version>1.7</compiler.target.version>
@@ -12,7 +12,7 @@
   		<d1_cn_common.version>2.3.0</d1_cn_common.version>
   		<d1_cn_index_common.version>2.3.2</d1_cn_index_common.version>
   		<d1_cn_index_generator.version>2.3.3</d1_cn_index_generator.version>
-  		<d1_cn_index_processor.version>2.3.14</d1_cn_index_processor.version>
+  		<d1_cn_index_processor.version>2.3.15</d1_cn_index_processor.version>
   		<spring.version>3.1.4.RELEASE</spring.version>
   		<hazelcast.version>2.4.1</hazelcast.version>
 	</properties>
@@ -297,7 +297,7 @@
         </repository>
 		<repository>
 			<id>dataone.org</id>
-			<url>http://maven.dataone.org/maven</url>
+			<url>https://maven.dataone.org/maven</url>
 			<releases>
 			    <enabled>true</enabled>
 			</releases>
