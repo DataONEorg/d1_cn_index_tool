@@ -297,7 +297,7 @@
         </repository>
 		<repository>
 			<id>dataone.org</id>
-			<url>https://maven.dataone.org/maven</url>
+			<url>https://maven.dataone.org</url>
 			<releases>
 			    <enabled>true</enabled>
 			</releases>
